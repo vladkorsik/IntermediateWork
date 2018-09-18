@@ -4,6 +4,7 @@ atc_1_comb - combos
 manual - drugs (vaccines for manual review)
 
 -- additionally need to map
+-- A10AB30,A10AC30,A10AD30,A10AE30 - insulin combos
 select * from manual;
 create table manual as
 select * from atc_1_comb where atc_name like 'meningo%';
