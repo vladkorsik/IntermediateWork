@@ -1,4 +1,17 @@
 
+insert into deprecated_rx_1
+select c.concept_id, c.concept_name, c2.concept_id, c2.concept_name from devv5.concept c
+  join devv5.concept c2
+  on c.concept_name = regexp_replace (c2.concept_name,'Injection','Injectable Solution') --and c.cocnept_name!=c2
+     and c.vocabulary_id = 'RxNorm' and c2.vocabulary_id = 'RxNorm'
+     and c.invalid_reason = 'D' and c2.invalid_reason is null
+     and c.concept_class_id = c2.concept_class_id
+  left join devv5.concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null and cr.relationship_id = 'Maps to'
+where cr.concept_id_2 is null
+and ( c.concept_id, c2.concept_id) not in
+    (select old_id, new_id from dev_rxnorm.deprecated_rx_1)
+;
+
 create table rxnorm_to_insert as
 select c.* from dev_rxnorm.deprecated_rx
 left join dev_rxnorm.deprecated_rx_1 on drug_concept_id=old_id
