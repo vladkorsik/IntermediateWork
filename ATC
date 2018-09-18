@@ -1317,3 +1317,71 @@ delete from relationship_to_concept where concept_code_1='nimustine' and concept
 select * from relationship_to_concept where concept_code_1='gadoteric acid';
 select * from reference where atc_Code = 'S01XA14' -- ophtalmical
 ;
+
+
+/** manual work **/
+
+--splitting names for vaccines
+create table manual_split AS
+with duplicate_meningococci as (
+SELECT id, atc_code, atc_name, regexp_replace (atc_name, ',(?=C)|,(?=Y)|,(?=W)|\s\+\s(?=C)', ' and meningococcus ', 'g') as atc_name2
+FROM dev_atc.manual
+WHERE atc_name  ilike '%men%'
+
+UNION ALL
+
+SELECT id, atc_code, atc_name, atc_name as atc_name2
+FROM dev_atc.manual
+WHERE atc_name not ilike '%men%' AND atc_name not in ('sodium chloride, hypertonic') AND atc_name not ilike '%levodopa%'
+),
+
+split_names as (
+SELECT id, atc_code, atc_name, regexp_split_to_table (atc_name2, '-(?!135)|[[:blank:]]and[[:blank:]](?!toxoids)|,[[:blank:]]combinations[[:blank:]]with[[:blank:]](?!toxoids)|(?<=mumps),\s(?=rubella)') as atc_name3
+FROM duplicate_meningococci
+),
+
+clean_names as (
+SELECT id, atc_code, atc_name, atc_name3, regexp_replace (atc_name3, ',|(?<=typhoid)(\s)*vaccine(,)*\s*|(\s)*bivalent(,)*\s*|(\s)*tetravalent(,)*\s*|(\s)*combinations(,)*\s*|(\s)*with(,)*\s*|(\s)*and(,)*\s*|(\s)*whole(,)*\s*|(?<!vari)(\s)*cell(,)*\s*|(\s)*attenuated(,)*\s*|(\s)*purified(,)*\s*|(\s)*polysaccharide(s)*(,)*\s*|(\s)*antigen(s)*(,)*\s*|(\s)*conjugated(,)*\s*|(\s)*inactivated(,)*\s*|(\s)*live(,)*\s*|(?<!tetanus(\s)*|diphtheria(\s)*)(\s)*toxoid(s*)(,)*\s*', '', 'g') as atc_name4
+FROM split_names
+),
+
+charact as (
+SELECT id, atc_code, atc_name, atc_name3, regexp_matches (atc_name3, 'purified\spolysaccharide\santigen|live\sattenuated|combinations\swith\stoxoids|purified\santigen\,\scombinations\swith\stoxoids|inactivated\,\swhole cell\,\scombinations\swith\stoxoids|vaccine\,\sinactivated\,\swhole\scell|inactivated\,\swhole\scell|purified\santigen|attenuated|purified\s*polysaccharides\santigen\sconjugated|purified\s*polysaccharides\santigen|polysaccharide|antigen|vesicular|conjugated|live|(?<!pertussis\sand\s)toxoids', 'g') as charact
+FROM split_names
+),
+
+split as (
+
+SELECT DISTINCT cn.atc_code, cn.atc_name, cn.atc_name3, cn.atc_name4, c.charact
+FROM clean_names cn
+LEFT JOIN charact c
+  ON cn.atc_code = c.atc_code AND cn.atc_name3 = c.atc_name3
+  ORDER BY cn.atc_code, cn.atc_name
+),
+
+charact2 as (
+SELECT atc_code, atc_name, atc_name3, atc_name4, regexp_replace (unnest(charact), ',|\s((?=\s))', '', 'g') as charact
+FROM split
+),
+
+final as (
+SELECT s.atc_code,s.atc_name, s.atc_name3, s.atc_name4, c2.charact 
+FROM split s
+LEFT JOIN charact2 c2
+  ON s.atc_code = c2.atc_code
+),
+
+final2 as(
+
+SELECT atc_code, atc_name, atc_name4 || ' ' || charact as ingredient_name
+FROM final
+WHERE charact is not null
+
+UNION ALL
+
+SELECT atc_code, atc_name, atc_name4 as ingredient_name
+FROM final
+WHERE charact is null
+ORDER BY atc_code
+)
+SELECT * from final2;
