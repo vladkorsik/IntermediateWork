@@ -362,16 +362,16 @@ INSERT INTO dev_ingredient_stage(  source_concept_name,  source_vocabulary_id,  
 
 insert into dev_ingredient_stage
 SELECT distinct  'antibiotics','ATC','Ingredient','antibiotics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor  
   JOIN concept c ON descendant_concept_id = c.concept_id
-  AND ancestor_concept_id IN ( 40182597,40194036,21602796,21600602,21601616,21601910,21602055,21603073,21603095,21603235,21603553 ) 
-  AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,40166605)
+  AND ancestor_concept_id IN (21600602, 21601616, 21601910, 21602055, 21603073, 21603095, 21603235, 21603553) 
+  AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' 
 ;
 delete from dev_ingredient_stage where source_concept_name='antibiotics' and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'antiseptics','ATC','Ingredient','antiseptics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor  
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4337018,40218829,21603217) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,40166605)
@@ -420,7 +420,7 @@ delete from dev_ingredient_stage where source_concept_name='expectorants' and co
 
 insert into dev_ingredient_stage
 SELECT distinct  'thiazides','ATC','Ingredient','thiazides',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor 
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4251718) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -429,7 +429,7 @@ delete from dev_ingredient_stage where source_concept_name='thiazides' and conce
 
 insert into dev_ingredient_stage
 SELECT distinct  'cannabinoids','ATC','Ingredient','cannabinoids',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor 
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4327210) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -438,7 +438,7 @@ delete from dev_ingredient_stage where source_concept_name='cannabinoids' and co
 
 insert into dev_ingredient_stage
 SELECT distinct  'potassium-sparing agents','ATC','Ingredient','potassium-sparing agents',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor  
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (21601532) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -447,7 +447,7 @@ delete from dev_ingredient_stage where source_concept_name='potassium-sparing ag
 
 insert into dev_ingredient_stage
 SELECT distinct  'mydriatics','ATC','Ingredient','mydriatics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor 
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (21605059) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -473,7 +473,8 @@ where source_concept_name='acid preparations'
 and concept_id is null;
 
 insert into dev_ingredient_stage
-SELECT distinct  'amino acids','ATC','Ingredient','amino acids',null, concept_id,concept_name,vocabulary_id	FROM devv5.concept_ancestor  -- antibiotic agents
+SELECT distinct  'amino acids','ATC','Ingredient','amino acids',null, concept_id,concept_name,vocabulary_id	
+FROM devv5.concept_ancestor  
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21601215, 21601034)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' ;
@@ -484,7 +485,7 @@ and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'analgesics','ATC','Ingredient','analgesics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor  
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21604253)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient'
@@ -631,7 +632,7 @@ FROM devv5.concept_ancestor  s
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21604489)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient'
-and concept_id not in (742594);
+;
 
 delete from dev_ingredient_stage
 where source_concept_name='psycholeptics'
@@ -672,7 +673,7 @@ and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'antiinfectives','ATC','Ingredient','antiinfectives',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  -- antibiotic agents
+FROM devv5.concept_ancestor  
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (40177425) 
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,19010309,906914,967823,19077884,901656,40166605,19111620,1563600,917006,1552310,923540,975125,19089810,919681)
