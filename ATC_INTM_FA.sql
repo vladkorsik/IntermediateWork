@@ -165,12 +165,12 @@ with primary_table as (
 from verysimple_comb v
 join verysimple_comb v2 on v.concept_code_1 = v2.concept_code_1 and v.flag = 'ing' and v2.flag = 'with'
 where v.ing!=v2.ing)
-select distinct p.concept_code_1, atc_name, s.concept_id, s.concept_name, s.concept_class_id
+select distinct p.concept_code_1, atc_name, c.concept_id, c.concept_name, c.concept_class_id
 from primary_table p
 join rx_combo r on p.atc_combo = r.i_combo
-join concept c on c.concept_id = p.drug_concept_id  and c.concept_class_id = 'Clinical Drug Form' and c.vocabulary_id = 'RxNorm'
-where p.concept_code not like '% %'--exclude ATC with forms
-
+join concept c on c.concept_id = r.drug_concept_id  and c.concept_class_id = 'Clinical Drug Form' and c.vocabulary_id = 'RxNorm'
+where p.concept_code_1 not like '% %'--exclude ATC with forms
+;
 -- and
 drop table if exists simple_comb;
 create table simple_comb as
