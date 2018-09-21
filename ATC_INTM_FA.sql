@@ -9,6 +9,7 @@ group by drug_concept_id
 ;
 
 -- 1. ATC combos with exclusions
+drop table if exists compl_combo;
 create table compl_combo as
 with hold as (
 select *  from dev_combo_stage d
@@ -60,6 +61,7 @@ join concept c on c.concept_id = drug_concept_id
 where e.atc_name is null
 ;
 
+drop table if exists atc_to_drug_1;
 create table atc_to_drug_1 as
 select c.* from compl_combo c
 join internal_relationship_stage i on i.concept_code_1=c.concept_code_1
@@ -130,8 +132,7 @@ delete from atc_to_drug_1
 where concept_code_1 ~ 'N02BE71|N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
 ;
 
-
-drop table atc_to_drug_2;
+drop table if exists atc_to_drug_2;
 create table atc_to_drug_2 as
 with secondary_table as (
 select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, c.concept_id_2,r.i_combo
@@ -171,7 +172,7 @@ join concept c on c.concept_id = p.drug_concept_id  and c.concept_class_id = 'Cl
 where p.concept_code not like '% %'--exclude ATC with forms
 
 -- and
-drop table simple_comb;
+drop table if exists simple_comb;
 create table simple_comb as
 with ing as
 (select i.concept_code_1,i.concept_code_2, atc_name,precedence,rtc.concept_id_2 as ing from atc_1_comb
@@ -264,7 +265,7 @@ where concept_code_1 not like '% %' --w/o forms
 ;
 
 --3rd Forms
-drop table primary_table;
+drop table if exists primary_table;
 create table primary_table as
 with ing as
 (select i.concept_code_1,atc_name,rtc.concept_id_2 as ing from atc_1
@@ -284,7 +285,7 @@ select distinct i.concept_code_1, atc_name, ing,form
 from ing i
 left join form f on i.concept_code_1=f.concept_code_1;
 
-drop table atc_to_drug_3;
+drop table if exists atc_to_drug_3;
 create table atc_to_drug_3 as
 with secondary_table as (
 select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id,c.concept_id_2 as sform, b.ingredient_concept_id as sing 
@@ -316,7 +317,7 @@ or concept_id in (35603348,44109089) -- the whole hierarchy
 ;
 
 --4th ingredients
-drop table atc_to_drug_4;
+drop table if exists atc_to_drug_4;
 create table atc_to_drug_4 as
 with secondary_table as (
  select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, b.ingredient_concept_id as sing 
