@@ -3,6 +3,21 @@ Prerequisites:
 get atc_drug_scraper using atc-grabber
 ************************************/
 
+-- figure out how it happened
+
+ delete from  dev_combo_stage where flag = 'with'  and atc_code like 'N02%';
+
+
+select * from dev_combo_stage;
+insert into dev_combo_stage
+select distinct a.atc_code,  a.atc_name, null, concept_code_2 = 'with'
+from excl a
+  join reference r on regexp_replace(a.atc_code,'.$','') = regexp_replace(r.atc_code,'.$','') and a.atc_code like 'N02%'
+join internal_relationship_stage i on i.concept_code_1 = r.concept_code
+join drug_concept_stage d on d.concept_code = concept_code_2 and concept_class_id = 'Ingredient';
+
+
+
 -- additionally need to map
 create table manual as
 select * from atc_1_comb where atc_name like 'meningo%';
