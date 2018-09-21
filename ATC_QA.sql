@@ -13,3 +13,8 @@ select distinct * from atc_drugs_scraper
   join reference using (atc_code)
 where adm_r not in ('N','O','P','R','SL','TD','V');
 
+select * from atc_drug_scraper a left join dev_atc.final_assembly_woca -- 1647
+using (atc_code)
+where sdrug is null and length(atc_code) = 7;
+
+

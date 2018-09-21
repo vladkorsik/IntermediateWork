@@ -1,6 +1,3 @@
-
---final assembly
-
 drop table if exists rx_combo;
 create table rx_combo as
 select drug_concept_id, 
@@ -97,13 +94,13 @@ join relationship_to_concept rtc on rtc.concept_code_1 = d.concept_code
  where  atc_name ~ 'comb' and not atc_name ~ 'excl|combinations of|derivate|other|with'
 ),
 addit as
-( 	select i.concept_code_1, i.concept_code_2, atc_name, rtc.concept_id_2 as ing, 'with' as flag
-		from atc_1_comb a
-		left join reference r using (atc_code)
-    join concept c on regexp_replace(c.concept_code,'.$','') = regexp_replace (a.atc_code,'.$','') and c.concept_class_id = 'ATC 5th'
-		join internal_relationship_stage i  on coalesce (r.concept_code,atc_code) = concept_code_1
-    join drug_concept_stage d on d.concept_code = concept_code_2 and d.concept_class_id = 'Ingredient'
-    join relationship_to_concept rtc on rtc.concept_code_1 = d.concept_code
+(select i.concept_code_1, i.concept_code_2, atc_name, rtc.concept_id_2 as ing, 'with' as flag
+from atc_1_comb a
+left join reference r using (atc_code)
+join concept c on regexp_replace(c.concept_code,'.$','') = regexp_replace (a.atc_code,'.$','') and c.concept_class_id = 'ATC 5th'
+join internal_relationship_stage i  on coalesce (r.concept_code,atc_code) = concept_code_1
+join drug_concept_stage d on d.concept_code = concept_code_2 and d.concept_class_id = 'Ingredient'
+join relationship_to_concept rtc on rtc.concept_code_1 = d.concept_code
 		where  a.atc_name ~ 'comb' and not a.atc_name ~ 'excl|combinations of|derivate|other|with'
 	)
 
@@ -270,24 +267,16 @@ left join form f on i.concept_code_1=f.concept_code_1;
 
 drop table atc_to_drug_3;
 create table atc_to_drug_3 as
-with secondary_table as (select 
- a.concept_id, 
- a.concept_name ,
- a.concept_class_id,
- a.vocabulary_id,
- c.concept_id_2 as sform, 
- b.ingredient_concept_id as sing 
+with secondary_table as (
+select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id,c.concept_id_2 as sform, b.ingredient_concept_id as sing 
  from concept a
- join drug_strength b
- on b.drug_concept_id = a.concept_id
- join concept_relationship c 
- on c.concept_id_1 = a.concept_id
+ join drug_strength b on b.drug_concept_id = a.concept_id
+ join concept_relationship c on c.concept_id_1 = a.concept_id
  where a.concept_class_id = 'Clinical Drug Form'
  and a.vocabulary_id = 'RxNorm'--temporary remove RXE
- and a.invalid_reason is null
- and relationship_id = 'RxNorm has dose form'
+ and a.invalid_reason is null and relationship_id = 'RxNorm has dose form'
  and c.invalid_reason is null
-and not exists (select 1 from drug_strength d where d.drug_concept_id = b.drug_concept_id and d.ingredient_concept_id!=b.ingredient_concept_id) -- excluding combos
+ and not exists (select 1 from drug_strength d where d.drug_concept_id = b.drug_concept_id and d.ingredient_concept_id!=b.ingredient_concept_id) -- excluding combos
 )
 select distinct p.concept_code_1, atc_name, s.concept_id, s.concept_name, s.concept_class_id 
 from primary_table p, secondary_table s
@@ -310,18 +299,13 @@ or concept_id in (35603348,44109089) -- the whole hierarchy
 --4th ingredients
 drop table atc_to_drug_4;
 create table atc_to_drug_4 as
-with secondary_table as (select 
- a.concept_id, 
- a.concept_name ,
- a.concept_class_id,
- a.vocabulary_id,
- b.ingredient_concept_id as sing 
+with secondary_table as (
+ select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, b.ingredient_concept_id as sing 
  from concept a
  join drug_strength b
  on b.drug_concept_id = a.concept_id
- where a.concept_class_id = 'Ingredient'
+ where a.concept_class_id = 'Ingredient' and a.invalid_reason is null
  and a.vocabulary_id = 'RxNorm'--temporary remove RXE
- and a.invalid_reason is null
 and not exists (select 1 from drug_strength d where d.drug_concept_id = b.drug_concept_id and d.ingredient_concept_id!=b.ingredient_concept_id) -- excluding combos
 )
 select distinct p.concept_code_1, atc_name, s.concept_id, s.concept_name, s.concept_class_id 
