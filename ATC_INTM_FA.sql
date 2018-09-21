@@ -113,6 +113,24 @@ from
 left join form f on i.concept_code_1=f.concept_code_1
 order by i.concept_code_1;
 
+--start removing falsly assign combo based on WHO rank
+delete from atc_to_drug_1
+where concept_code_1 ~ 'N02BB74|N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Paracetamol|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_1
+where concept_code_1 ~ 'N02BA75|N02BA55' and concept_name ~* 'Phenazone|Aspirin|Paracetamol|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_1
+where concept_code_1 ~ 'N02BB71|N02BB51' and concept_name ~* 'Aspirin|Paracetamol|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_1
+where concept_code_1 ~ 'N02BA51|N02BA71' and concept_name ~* 'Paracetamol|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_1
+where concept_code_1 ~ 'N02BE71|N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
+;
+
+
 drop table atc_to_drug_2;
 create table atc_to_drug_2 as
 with secondary_table as (
