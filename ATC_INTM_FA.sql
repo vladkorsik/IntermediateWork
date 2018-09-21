@@ -1,3 +1,4 @@
+-- 0. creating a table with aggregated RxNorm/RxE ingredients
 drop table if exists rx_combo;
 create table rx_combo as
 select drug_concept_id, 
@@ -6,8 +7,8 @@ from drug_strength
 join concept on concept_id = drug_concept_id and concept_class_id in ('Clinical Drug Form') -- 'Clinical Drug Comp' doesn exist
 group by drug_concept_id
 ;
---1st wierd combos
--- ingredient with exclusions, no additional
+
+-- 1. ATC combos with exclusions
 create table compl_combo as
 with hold as (
 select *  from dev_combo_stage d
