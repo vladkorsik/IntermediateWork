@@ -492,3 +492,5 @@ ON ca.descendant_concept_id = c.concept_id AND ca.ancestor_concept_id = 21600713
 
 WHERE c.vocabulary_id = 'ATC' AND c.concept_name not ILIKE '%insu%'
 ;*/
+
+--change to check smth
