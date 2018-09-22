@@ -936,7 +936,7 @@ select * from reference where atc_Code = 'S01XA14' -- ophtalmical
 
 
 /** manual work **/
-
+atc_to_drug_manual
 --splitting names for vaccines
 create table manual_split AS
 with duplicate_meningococci as (
