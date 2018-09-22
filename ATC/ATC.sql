@@ -261,7 +261,7 @@ values ('R03AC05 Metered Dose Inhaler','Metered Dose Inhaler');
 -- create intermediate tables with forms identified based on parent ATC codes
 drop table systemic;
 create table systemic as
-select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R01B|R03D|^H|^J'
+select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R03D|^H|^J'
 and atc_code=concept_code;
 
 drop table nasal;
@@ -281,7 +281,7 @@ and atc_code=concept_code;
 
 drop table oral;
 create table oral as
-select atc_code from reference where concept_code  ~ 'A07|V04CA02|A06AD'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
+select atc_code from reference where concept_code  ~ 'A07|V04CA02|A06AD|R01B'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
 and atc_code=concept_code;
 
 drop table parent;
@@ -934,9 +934,34 @@ select * from relationship_to_concept where concept_code_1='gadoteric acid';
 select * from reference where atc_Code = 'S01XA14' -- ophtalmical
 ;
 
+delete from internal_relationship_stage where concept_code_1 in (
+select concept_code from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
+and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew');
+
+delete from drug_concept_stage  where concept_code in (
+select concept_code from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
+and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew');
+
+delete from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
+and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew'
+
+
+delete from relationship_to_concept
+where concept_code_1 ='dexibuprofen' and concept_id_2 = 1177480;
+delete from relationship_to_concept
+where concept_code_1 ='sultamicillin' and concept_id_2 = 1717327;
+UPDATE relationship_to_concept
+   SET concept_id_2 = 1383815
+WHERE concept_code_1 = 'isosorbide mononitrate' AND   concept_id_2 = 1383925;
+UPDATE relationship_to_concept
+   SET concept_id_2 = 19049816
+WHERE concept_code_1 = 'choline theophyllinate';
+delete from relationship_to_concept
+where concept_code_1 ='bufylline' and concept_id_2 = 1237049;
+
 
 /** manual work **/
-
+atc_to_drug_manual
 --splitting names for vaccines
 create table manual_split AS
 with duplicate_meningococci as (
