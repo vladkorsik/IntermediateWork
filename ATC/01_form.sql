@@ -145,12 +145,12 @@ join atc_drugs_scraper on substring (concept_name,'\w+') = atc_code
 -- create intermediate tables with forms identified based on parent ATC codes
 drop table systemic;
 create table systemic as
-select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R01B|R03D|^H|^J'
+select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R03D|^H|^J'
 and atc_code=concept_code;
 
 drop table nasal;
 create table nasal as
-select atc_code from reference where concept_code  ~ 'R01AD01|R01AD12|R01AX03|R01AX02'
+select atc_code from reference where concept_code  ~ 'R01' and not concept_code  ~ '^R01B'
 and atc_code=concept_code;
 
 drop table irrig;
@@ -165,7 +165,7 @@ and atc_code=concept_code;
 
 drop table oral;
 create table oral as
-select atc_code from reference where concept_code  ~ 'A07|V04CA02|A06AD'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
+select atc_code from reference where concept_code  ~ 'A07|R01B|V04CA02|A06AD'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
 and atc_code=concept_code;
 
 drop table parent;
