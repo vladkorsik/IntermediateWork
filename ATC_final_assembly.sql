@@ -37,7 +37,7 @@ where descendant_concept_id not in (select concept_id from final_assembly)
 delete final_assembly where concept_name like '%insulin%';
 insert into final_assembly
 select distinct s.*, c.concept_id, c.concept_name, c.concept_class_id, '5' as order
-from manual m
+from atc_to_drug_manual m
 join atc_drugs_scraper s using (atc_code)
 join devv5.concept_ancestor ca on ca.ancestor_concept_id = m.concept_id
 join concept c on c.concept_id = ca.descendant_concept_id;
@@ -71,9 +71,9 @@ join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 where atc_code not in 
 (select atc_code from final_assembly_woCA);
 
-delete final_assembly where concept_name like '%insulin%';
-insert into final_assembly
+delete final_assembly_woca where concept_name like '%insulin%';
+insert into final_assembly_woca
 select distinct s.*, m.concept_id, m.concept_name, m.concept_class_id, '5' as order
-from manual m
+from atc_to_drug_manual m
 join atc_drugs_scraper s using (atc_code)
 ;
