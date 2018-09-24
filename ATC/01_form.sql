@@ -106,6 +106,12 @@ from concept
 where concept_class_id = 'Dose Form' and concept_name like '%Vaginal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
 
 union all
+    
+select concept_name, 'r' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Rectal|Enema' and vocabulary_id like 'RxNorm%' and invalid_reason is null  
+    
+union all    
 
 select concept_name, 'n' as flag
 from concept
@@ -148,6 +154,11 @@ create table systemic as
 select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R03D|^H|^J'
 and atc_code=concept_code;
 
+drop table rectal;
+create table rectal as
+select atc_code from reference where concept_code ~'C05A'
+and atc_code = concept_code;
+
 drop table nasal;
 create table nasal as
 select atc_code from reference where concept_code  ~ 'R01' and not concept_code  ~ '^R01B'
@@ -185,7 +196,7 @@ and atc_code=concept_code;
  
 drop table topical;
 create table topical as
-select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|C05A|R01AA14|B02BC|N01B|^D'
+select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|R01AA14|B02BC|N01B|^D'
 and atc_code=concept_code;
 
 drop table throat;
