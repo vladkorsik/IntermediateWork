@@ -143,7 +143,7 @@ from
 left join form f on i.concept_code_1=f.concept_code_1
 order by i.concept_code_1;
 
-insert into atc_to_drug_2
+create table atc_to_drug_2 as 
 with secondary_table as (
 select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, c.concept_id_2,r.i_combo
  from rx_combo r
