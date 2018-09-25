@@ -265,7 +265,7 @@ delete from atc_to_drug_3
 where concept_code_1 ~ 'N02BE71|N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from  atc_to_drug_3
-where atc_code ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
+where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
 
 delete from atc_to_drug_3 where  concept_id in --removing duplicates 
 (select concept_id from atc_to_drug_1);
