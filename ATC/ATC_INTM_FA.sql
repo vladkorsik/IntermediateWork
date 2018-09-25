@@ -132,7 +132,6 @@ join concept c on regexp_replace(c.concept_code,'.$','') = regexp_replace (a.atc
 join internal_relationship_stage i  on coalesce (r.concept_code,atc_code) = concept_code_1
 join drug_concept_stage d on d.concept_code = concept_code_2 and d.concept_class_id = 'Ingredient'
 join relationship_to_concept rtc on rtc.concept_code_1 = d.concept_code
-		where  a.atc_name ~ 'comb' and not a.atc_name ~ 'excl|combinations of|derivate|other|with'
 	)
 
 select distinct i.concept_code_1,i.concept_code_2, atc_name, ing,form, flag
