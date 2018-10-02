@@ -385,4 +385,5 @@ where s.sing = p.ing
 and p.form is null
 and p.concept_code_1 not in (select concept_code from reference where concept_code!=atc_code)-- exclude drugs that should have forms (will remain unmapped)
 ;
-
+delete from atc_to_drug_6
+where atc_name = 'amino acids';
