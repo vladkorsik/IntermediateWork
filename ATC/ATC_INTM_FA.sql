@@ -233,6 +233,7 @@ join rx_combo on i_combo ~ cast(h.concept_id_2 as varchar) and i_combo ~ cast(a.
 join concept c on c.concept_id = drug_concept_id
 where e.atc_name is null
 ;
+--with
 drop table if exists atc_to_drug_3;
 create table atc_to_drug_3 as
 select c.* from compl_combo c
@@ -241,27 +242,28 @@ join relationship_to_concept rtc on rtc.concept_code_1 = i.concept_code_2
 join concept_relationship cr  on cr.concept_id_1 = c.concept_id
 and relationship_id = 'RxNorm has dose form'  and cr.invalid_reason is null
 where cr.concept_id_2 = rtc.concept_id_2
+and atc_name like '%with%'
 ;
 --inserting everything that goes without a form
 insert into atc_to_drug_3
 select * from compl_combo
-where concept_code_1 not like '% %';
+where concept_code_1 not like '% %' and atc_name like '%with%';
 
 --start removing falsly assign combo based on WHO rank
 delete from atc_to_drug_3
-where concept_code_1 ~ 'N02BB74|N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BB74' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from atc_to_drug_3
-where concept_code_1 ~ 'N02BA75|N02BA55' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BA75' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from atc_to_drug_3
-where concept_code_1 ~ 'N02BB71|N02BB51' and concept_name ~* 'Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BB71' and concept_name ~* 'Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from atc_to_drug_3
-where concept_code_1 ~ 'N02BA51|N02BA71' and concept_name ~* 'Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BA71' and concept_name ~* 'Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from atc_to_drug_3
-where concept_code_1 ~ 'N02BE71|N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BE71' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from  atc_to_drug_3
 where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
@@ -269,7 +271,44 @@ where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'co
 delete from atc_to_drug_3 where  concept_id in --removing duplicates 
 (select concept_id from atc_to_drug_1);
 
---4th Forms
+--excl
+drop table if exists atc_to_drug_4;
+create table atc_to_drug_4 as
+select c.* from compl_combo c
+join internal_relationship_stage i on i.concept_code_1=c.concept_code_1
+join relationship_to_concept rtc on rtc.concept_code_1 = i.concept_code_2
+join concept_relationship cr  on cr.concept_id_1 = c.concept_id
+and relationship_id = 'RxNorm has dose form'  and cr.invalid_reason is null
+where cr.concept_id_2 = rtc.concept_id_2
+and atc_name not like '%with%'
+;
+--inserting everything that goes without a form
+insert into atc_to_drug_4
+select * from compl_combo
+where concept_code_1 not like '% %' and atc_name not like '%with%';
+
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BA55' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BB51' and concept_name ~* 'Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BA51' and concept_name ~* 'Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from  atc_to_drug_4
+where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
+
+delete from atc_to_drug_4 where  concept_id in --removing duplicates 
+(select concept_id from atc_to_drug_1);
+
+--5th Forms
 drop table if exists primary_table;
 create table primary_table as
 with ing as
@@ -290,8 +329,8 @@ select distinct i.concept_code_1, atc_name, ing,form
 from ing i
 left join form f on i.concept_code_1=f.concept_code_1;
 
-drop table if exists atc_to_drug_4;
-create table atc_to_drug_4 as
+drop table if exists atc_to_drug_5;
+create table atc_to_drug_5 as
 with secondary_table as (
 select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id,c.concept_id_2 as sform, b.ingredient_concept_id as sing 
  from concept a
@@ -309,24 +348,24 @@ where s.sform = p.form
 and s.sing = p.ing
 ;
 --manually excluded drugs based on Precise Ingredients
-insert into atc_to_drug_4
+insert into atc_to_drug_5
 select 'B02BD11','catridecacog', concept_id, concept_name, concept_class_id
 	from concept where vocabulary_id = 'RxNorm' and concept_name like 'coagulation factor XIII a-subunit (recombinant)%' and standard_concept='S'
 or concept_id = 35603348 -- the whole hierarchy
 ;
 
-insert into atc_to_drug_4
+insert into atc_to_drug_5
 select 'B02BD14','susoctocog alfa', concept_id, concept_name, concept_class_id
 from concept where vocabulary_id like 'RxNorm%' and concept_name like 'antihemophilic factor, porcine B-domain truncated recombinant%' and standard_concept='S'
 or concept_id in (35603348,44109089) -- the whole hierarchy
 ;
-delete from atc_to_drug_4
+delete from atc_to_drug_5
 where concept_code_1 = 'B02BD14' and concept_name like '%Tretten%' --catridecacog
 ;
 
---5th ingredients
-drop table if exists atc_to_drug_5;
-create table atc_to_drug_5 as
+--6th ingredients
+drop table if exists atc_to_drug_6;
+create table atc_to_drug_6 as
 with secondary_table as (
  select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, b.ingredient_concept_id as sing 
  from concept a
