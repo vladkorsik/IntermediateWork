@@ -320,6 +320,9 @@ select 'B02BD14','susoctocog alfa', concept_id, concept_name, concept_class_id
 from concept where vocabulary_id like 'RxNorm%' and concept_name like 'antihemophilic factor, porcine B-domain truncated recombinant%' and standard_concept='S'
 or concept_id in (35603348,44109089) -- the whole hierarchy
 ;
+delete from atc_to_drug_4
+where concept_code_1 = 'B02BD14' and concept_name like '%Tretten%' --catridecacog
+;
 
 --5th ingredients
 drop table if exists atc_to_drug_5;
