@@ -268,10 +268,6 @@ where concept_code_1 ~ 'N02BE71' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenac
 delete from  atc_to_drug_3
 where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
 
---atenolol and other diuretics, combinations, one of a kind
-delete from atc_to_drug_3
-where concept_code_1 ~ 'C07CB53' and regexp_count(concept_name,'/')<2;
-
 delete from atc_to_drug_3 where  concept_id in --removing duplicates 
 (select concept_id from atc_to_drug_1);
 
@@ -311,6 +307,10 @@ where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'co
 
 delete from atc_to_drug_4 where  concept_id in --removing duplicates 
 (select concept_id from atc_to_drug_1);
+
+--atenolol and other diuretics, combinations, one of a kind
+delete from atc_to_drug_4
+where concept_code_1 ~ 'C07CB53' and concept_name not like '%/%/%';
 
 --5th Forms
 drop table if exists primary_table;
