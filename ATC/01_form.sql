@@ -208,7 +208,7 @@ and atc_code=concept_code;
  
 drop table topical;
 create table topical as
-select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|R01AA14|B02BC|N01B|^D'
+select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|R01AA14|B02BC|N01B|C05BA|^D'
 and atc_code=concept_code;
 
 drop table throat;
