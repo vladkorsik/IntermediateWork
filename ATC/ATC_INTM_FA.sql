@@ -167,6 +167,7 @@ on s.concept_id_2 = p.form
 and s.i_combo = p.atc_combo
 ;
 
+drop table if exists atc_to_drug_2;
 insert into atc_to_drug_2
 with primary_table as (
 			select v.concept_code_1, v.form, v.atc_name, case when v.ing>v2.ing then cast(v2.ing as varchar)||'-'||cast(v.ing as varchar)
