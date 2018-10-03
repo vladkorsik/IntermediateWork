@@ -250,6 +250,12 @@ select * from compl_combo
 where concept_code_1 not like '% %' and atc_name like '%with%';
 
 --start removing falsly assign combo based on WHO rank
+
+-- zero rank
+delete from atc_to_drug_3
+where concept_code_1 ~ 'M03BA73|M03BA72|N02AC74' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone'
+;
+--starts the official rank
 delete from atc_to_drug_3
 where concept_code_1 ~ 'N02BB74' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
@@ -287,6 +293,11 @@ insert into atc_to_drug_4
 select * from compl_combo
 where concept_code_1 not like '% %' and atc_name not like '%with%';
 
+-- zero rank
+delete from atc_to_drug_4
+where concept_code_1 ~ 'M03BA53|M03BA52|N02AC54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone'
+;
+--starts the official rank
 delete from atc_to_drug_4
 where concept_code_1 ~ 'N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
