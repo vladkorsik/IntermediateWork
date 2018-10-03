@@ -223,7 +223,7 @@ and atc_code=concept_code;
 
 drop table vaginal;
 create table vaginal as
-select atc_code from reference where concept_code  like 'G02CC%'
+select atc_code from reference where concept_code ~ 'G02CC|G01A'
 and atc_code=concept_code;
 
 drop table localoral;
