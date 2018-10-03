@@ -310,7 +310,9 @@ delete from atc_to_drug_4 where  concept_id in --removing duplicates
 
 --atenolol and other diuretics, combinations, one of a kind
 delete from atc_to_drug_4
-where concept_code_1 ~ 'C07CB53' and concept_name not like '%/%/%';
+where concept_code_1 ~ 'C07CB53|C07DB01' and concept_name not like '%/%/%';
+delete from atc_to_drug_4
+where concept_code_1 ~ 'C07CB03' and concept_name  like '%/%/%';
 
 --5th Forms
 drop table if exists primary_table;
