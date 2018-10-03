@@ -3,6 +3,7 @@ Prerequisites:
 get atc_drug_scraper using atc-grabber
 ************************************/
 
+-- watch for A01 - stomatological
 -- additionally need to map
 create table manual as
 select * from atc_1_comb where atc_name like 'meningo%';
