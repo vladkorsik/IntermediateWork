@@ -77,6 +77,12 @@ where concept_class_id = 'Dose Form' and concept_name like '%Oral|Chewab%' and v
 
 union all
 
+select concept_name, 'dressing' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Medicated Pad' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
 select concept_name, 'i' as flag
 from concept
 where concept_class_id = 'Dose Form' and concept_name = 'Irrigation Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
