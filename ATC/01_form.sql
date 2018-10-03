@@ -180,6 +180,11 @@ create table inhal as
 select atc_code from reference where concept_code  ~ 'R03B|R03AC05'--rimiterol
 and atc_code=concept_code;
 
+drop table dressing;
+create table dressing as
+select atc_code from reference where concept_code  ~ '^D09'
+and atc_code=concept_code;
+
 drop table oral;
 create table oral as
 select atc_code from reference where concept_code  ~ 'A07|R01B|V04CA02|A06AD'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
