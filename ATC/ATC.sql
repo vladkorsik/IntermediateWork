@@ -7,7 +7,10 @@ get atc_drug_scraper using atc-grabber
 
  delete from  dev_combo_stage where flag = 'with'  and atc_code like 'N02%';
 
-
+delete from dev_combo_stage where
+  atc_code in ('C07CB02','C07CB03','C07CB53') and ing in ('Hydrochlorothiazide','Hydralazine');
+  
+  
 select * from dev_combo_stage;
 insert into dev_combo_stage
 select distinct a.atc_code,  a.atc_name, null, concept_code_2 = 'with'
