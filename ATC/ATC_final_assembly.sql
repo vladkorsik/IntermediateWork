@@ -6,7 +6,7 @@ from atc_to_drug_1 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 join devv5.concept_ancestor on ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = descendant_concept_id and vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
-  ;
+ ;
 delete final_assembly
 where atc_code like 'G03FB%' and concept_class_id not like '%Pack%';
 
@@ -80,6 +80,8 @@ from atc_to_drug_2 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 where atc_code not in 
 (select atc_code from final_assembly_woCA)
+and a.concept_id not in
+(select concept_id from final_assembly_woCA)
 ;
 insert into final_assembly_woCA
 select  distinct atc_code, a.atc_name, a.concept_id, a.concept_name, a.concept_class_id, '3' as order
