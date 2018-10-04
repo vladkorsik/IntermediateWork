@@ -62,6 +62,9 @@ join atc_drugs_scraper s using (atc_code)
 join devv5.concept_ancestor ca on ca.ancestor_concept_id = m.concept_id
 join concept c on c.concept_id = ca.descendant_concept_id;
 
+delete from  final_assembly
+where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
+and concept_id in (select concept_id from final_assembly group by concept_id having count(1)>1);
 
 --table wo ancestor
 drop table final_assembly_woCA;
@@ -122,3 +125,8 @@ join devv5.concept c on c.concept_id = descendant_concept_id and c.concept_class
 where atc_code like 'G03FB%'; -- packs
 delete from final_assembly_woca
 where atc_code like 'G03FB%' and concept_class_id in ('Clinical Drug Form','Ingredient');
+
+
+delete from  final_assembly_woca
+where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
+and concept_id in (select concept_id from final_assembly_woca group by concept_id having count(1)>1);
