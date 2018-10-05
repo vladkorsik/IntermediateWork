@@ -253,7 +253,7 @@ where concept_code_1 not like '% %' and atc_name like '%with%';
 
 -- zero rank
 delete from atc_to_drug_3
-where concept_code_1 ~ 'M03BA73|M03BA72|N02AC74|M03BB72|M03BB73|M09AA72|N02AC74|N02AC74|N02AB72|N02BB72' 
+where concept_code_1 ~ 'M03BA73|M03BA72|N02AC74|M03BB72|M03BB73|M09AA72|N02AC74|N02AC74|N02AB72|N02BB72|N02BA77' 
 and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone|etamizole|Ergotamine'
 ;
 --starts the official rank
@@ -296,24 +296,24 @@ where concept_code_1 not like '% %' and atc_name not like '%with%';
 
 -- zero rank
 delete from atc_to_drug_4
-where concept_code_1 ~ 'M03BA53|M03BA52|N02AC54|M03BB52|M03BB53|N02AC54|N02AC54|N02AB52|N02BB52' 
-and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone|Metamizole|Ergotamine'
+where concept_code_1 ~ 'M03BA53|M03BA52|N02AC54|M03BB52|M03BB53|N02AC54|N02AC54|N02AB52|N02BB52|N02CA52|N02BA57|N02BA57' 
+and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone'
 ;
 --starts the official rank
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BA55' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BA55' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BB51' and concept_name ~* 'Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BB51' and concept_name ~* 'Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BA51' and concept_name ~* 'Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BA51' and concept_name ~* 'Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BE51' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin'
+where concept_code_1 ~ 'N02BE51|N02BB53' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
 
 delete from  atc_to_drug_4
@@ -382,6 +382,8 @@ or concept_id in (35603348,44109089) -- the whole hierarchy
 delete from atc_to_drug_5
 where concept_code_1 = 'B02BD14' and concept_name like '%Tretten%' --catridecacog
 ;
+delete from atc_to_drug_5
+where atc_name = 'amino acids';
 
 --6th ingredients
 drop table if exists atc_to_drug_6;
@@ -401,5 +403,4 @@ where s.sing = p.ing
 and p.form is null
 and p.concept_code_1 not in (select concept_code from reference where concept_code!=atc_code)-- exclude drugs that should have forms (will remain unmapped)
 ;
-delete from atc_to_drug_6
-where atc_name = 'amino acids';
+
