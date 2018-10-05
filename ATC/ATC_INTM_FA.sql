@@ -141,6 +141,7 @@ from
 left join form f on i.concept_code_1=f.concept_code_1
 order by i.concept_code_1;
 
+drop table if exists atc_to_drug_2;
 create table atc_to_drug_2 as 
 with secondary_table as (
 select a.concept_id, a.concept_name ,a.concept_class_id,a.vocabulary_id, c.concept_id_2,r.i_combo
@@ -166,7 +167,6 @@ on s.concept_id_2 = p.form
 and s.i_combo = p.atc_combo
 ;
 
-drop table if exists atc_to_drug_2;
 insert into atc_to_drug_2
 with primary_table as (
 			select v.concept_code_1, v.form, v.atc_name, case when v.ing>v2.ing then cast(v2.ing as varchar)||'-'||cast(v.ing as varchar)
