@@ -333,6 +333,10 @@ where concept_code_1 ~ 'C07CB53|C07DB01' and concept_name not like '%/%/%';
 delete from atc_to_drug_4
 where concept_code_1 ~ 'C07CB03|C07CB53' and concept_name  like '%/%/%';
 
+-- PPI and aspirin
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02BA51' and concept_name *~ 'Omeprazole|Pantoprazole|Rabeprazol';
+
 --5th Forms
 drop table if exists primary_table;
 create table primary_table as
