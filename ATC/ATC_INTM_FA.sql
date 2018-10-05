@@ -253,12 +253,15 @@ where concept_code_1 not like '% %' and atc_name like '%with%';
 
 -- zero rank
 delete from atc_to_drug_3
-where concept_code_1 ~ 'M03BA73|M03BA72|N02AC74|M03BB72|M03BB73|M09AA72|N02AC74|N02AC74|N02AB72|N02BB72|N02BA77' 
+where concept_code_1 ~ 'M03BA73|M03BA72|N02AC74|M03BB72|N02BB52|M03BB73|M09AA72|N02AB72|N02BB72|N02BA77' 
 and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone|etamizole|Ergotamine'
 ;
 --starts the official rank
 delete from atc_to_drug_3
 where concept_code_1 ~ 'N02BB74' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
+;
+delete from atc_to_drug_3
+where concept_code_1 ~ 'N02BB51' and concept_name ~* 'Salicylamide|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
 ;
 delete from atc_to_drug_3
 where concept_code_1 ~ 'N02BA75' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin'
@@ -296,12 +299,12 @@ where concept_code_1 not like '% %' and atc_name not like '%with%';
 
 -- zero rank
 delete from atc_to_drug_4
-where concept_code_1 ~ 'M03BA53|M03BA52|N02AC54|M03BB52|M03BB53|N02AC54|N02AC54|N02AB52|N02BB52|N02CA52|N02BA57|N02BA57' 
+where concept_code_1 ~ 'M03BA53|M03BA52|N02AC54|M03BB52|M03BB53|N02AB52|N02BB52|N02CA52|N02BA57' 
 and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Methadone'
 ;
 --starts the official rank
 delete from atc_to_drug_4
-where concept_code_1 ~ 'N02BB54' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
+where concept_code_1 ~ 'N02BB54|N02BB52|M03BB52' and concept_name ~* 'Salicylamide|Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Dipyrone'
 ;
 delete from atc_to_drug_4
 where concept_code_1 ~ 'N02BA55' and concept_name ~* 'Phenazone|Aspirin|Acetaminophen|Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
@@ -315,6 +318,8 @@ where concept_code_1 ~ 'N02BA51' and concept_name ~* 'Acetaminophen|Dipyrocetyl|
 delete from atc_to_drug_4
 where concept_code_1 ~ 'N02BE51|N02BB53' and concept_name ~* 'Dipyrocetyl|Bucetin|Phenacetin|Ergotamine|Metamizole'
 ;
+delete from atc_to_drug_4
+where concept_code_1 ~ 'N02AC54' and concept_name ~* 'Dipyrone';
 
 delete from  atc_to_drug_4
 where concept_code_1 ~ 'N02' and concept_name ~ 'Codeine' and not atc_name ~ 'codeine';
@@ -326,7 +331,7 @@ delete from atc_to_drug_4 where  concept_id in --removing duplicates
 delete from atc_to_drug_4
 where concept_code_1 ~ 'C07CB53|C07DB01' and concept_name not like '%/%/%';
 delete from atc_to_drug_4
-where concept_code_1 ~ 'C07CB03' and concept_name  like '%/%/%';
+where concept_code_1 ~ 'C07CB03|C07CB53' and concept_name  like '%/%/%';
 
 --5th Forms
 drop table if exists primary_table;
