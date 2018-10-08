@@ -202,10 +202,11 @@ select distinct r.concept_code as concept_code_1, h. atc_name, drug_concept_id a
 from hold h
 join reference r on r.atc_code = h.atc_code
 left join additional a on h.atc_code=a.atc_code
-join excl e on h.atc_code=e.atc_code
-join rx_combo on i_combo ~ cast(h.concept_id_2 as varchar) and not i_combo ~ cast(e.concept_id_2 as varchar) and i_combo like '%-%'
+left join excl e on h.atc_code=e.atc_code
+join rx_combo on i_combo ~ cast(h.concept_id_2 as varchar) and i_combo like '%-%'
 join concept c on c.concept_id = drug_concept_id
-where a.atc_name is null
+where (a.atc_code is not null and i_combo ~ cast(a.concept_id_2 as varchar))
+or (e.atc_code is not null and not i_combo ~ cast(e.concept_id_2 as varchar))
 ;
 
 --with no excluded
@@ -291,6 +292,7 @@ join concept_relationship cr  on cr.concept_id_1 = c.concept_id
 and relationship_id = 'RxNorm has dose form'  and cr.invalid_reason is null
 where cr.concept_id_2 = rtc.concept_id_2
 and atc_name not like '%with%'
+
 ;
 --inserting everything that goes without a form
 insert into atc_to_drug_4
