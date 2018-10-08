@@ -160,7 +160,7 @@ drop table systemic;
 create table systemic as
 select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R03D|^H|^J'
 and atc_code=concept_code
-and atc_code not like 'S02%';
+and atc_code not like 'S02%' and atc_code not like 'D04%';
 
 drop table rectal;
 create table rectal as
