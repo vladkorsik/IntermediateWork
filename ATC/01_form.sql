@@ -44,6 +44,10 @@ SET atc_name = 'progestogen and estrogen',
 WHERE atc_code = 'G02BB01';
 
 
+--medicated shampoos
+--('D11AC01','D11AC02','D11AC03','D11AC06','D11AC08','D11AC09','D11AC30')
+
+
  -- add buccal and others
 drop table if exists forms ;
 create table forms as
