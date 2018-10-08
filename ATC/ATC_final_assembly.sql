@@ -124,10 +124,9 @@ from final_assembly_woca f
 join devv5.concept_ancestor ca
 on ca.ancestor_concept_id = f.concept_id
 join devv5.concept c on c.concept_id = descendant_concept_id and c.concept_class_id like '%Pack%'
-where atc_code like 'G03FB%'; -- packs
+where atc_code ~ 'G03FB|G03AB'; -- packs
 delete from final_assembly_woca
-where atc_code like 'G03FB%' and concept_class_id in ('Clinical Drug Form','Ingredient');
-
+where atc_code ~ 'G03FB|G03AB' and concept_class_id in ('Clinical Drug Form','Ingredient');
 
 delete from  final_assembly_woca
 where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
