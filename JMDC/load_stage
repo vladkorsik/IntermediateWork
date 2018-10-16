@@ -1,4 +1,6 @@
 
+
+
 /*
 o   A = ampoule (parenteral)
 
@@ -10,26 +12,11 @@ o   V = vial (oral)
 
 o   Bot = bottle (topical or oral)
 
-In the Brand Name column, there are records “Deleted NHI price” and “Crude Drugs”. Disregard.
+In the Brand Name column, there are records "Deleted NHI price" and "Crude Drugs". Disregard.
 */
 
-	DO $$
-	DECLARE
-		ex INTEGER;
-	BEGIN
-		--SELECT MAX(concept_id)+1 INTO ex FROM concept WHERE concept_id<500000000; -- Last valid below HOI concept_id
-		DROP SEQUENCE IF EXISTS new_vocab;
-		SELECT concept_id + 1 INTO ex FROM (
-			SELECT concept_id, next_id, next_id - concept_id - 1 free_concept_ids
-			FROM (SELECT concept_id, LEAD (concept_id) OVER (ORDER BY concept_id) next_id FROM concept where concept_id >= 581480 and concept_id < 500000000) AS t
-			WHERE concept_id <> next_id - 1 AND next_id - concept_id > (SELECT COUNT (*) FROM concept_stage WHERE concept_id IS NULL)
-			ORDER BY next_id - concept_id
-			FETCH FIRST 1 ROW ONLY
-		) AS sq;
-		EXECUTE 'CREATE SEQUENCE v5_concept INCREMENT BY 1 START WITH ' || ex || ' NO CYCLE CACHE 20';
-	END$$;
-commit;
-
+DROP SEQUENCE IF EXISTS new_vocab ;
+CREATE SEQUENCE new_vocab INCREMENT BY 1 START WITH 636166 CACHE 20; 
 
 /*************************************************
 * 0. Clean the data and extract non drugs *
@@ -121,36 +108,17 @@ update j set standardized_unit = regexp_replace(standardized_unit, '\(w/Dil\)', 
 /*************************************************
 * 1. Create parsed Ingredients and relationships *
 *************************************************/
--- Collect mono-ingredients
-drop table if exists pi;
-create table pi as
-select distinct
-  drug_code,
-  general_name as ing_name
-from j
-where general_name not like '%/%'
-and general_name not like '% and %';
-
--- Split poly-ingredients
-insert into pi
-with j_slash as (
-  select drug_code, replace(general_name, ' and ', '/') as concept_name from j
-)
-select distinct
-  drug_code,
-  regexp_substr (concept_name, '[^/]+', 1, rn) as ing_name
-from j_slash
-cross join (
-  select rownum rn
-  from (
-    select max(regexp_count (concept_name, '/') + 1) mx
-    from j_slash
-  )
-connect by level <= mx
-)
-where regexp_substr (concept_name, '[^/]+', 1, rn) is not null
-and concept_name like '%/%'
-;
+DROP TABLE if exists PI;
+CREATE TABLE pi 
+AS 
+SELECT drug_code, general_name AS ing_name
+FROM j
+WHERE general_name NOT LIKE '%/%' AND general_name NOT LIKE '% and %'
+UNION
+SELECT drug_code, ing_name
+FROM (SELECT drug_code, REPLACE(general_name,' and ','/') AS concept_name
+      FROM j) j,
+     UNNEST(STRING_TO_ARRAY(j.concept_name,'/')) AS ing_name;
 
 /************************************
 * 2. Populate drug concept stage *
@@ -163,8 +131,8 @@ select distinct
   'Drug Product' as concept_class_id,
   null as standard_concept,
   drug_code as concept_code,
-  'Drug',
   null as possible_excipient,
+   'Drug',
   to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
   null as invalid_reason
 from j;
@@ -180,9 +148,9 @@ select
   'JMDC' as vocabulary_id,
   'Ingredient' as concept_class_id,
   null as standard_concept,
-  'OMOP'||new_vocab.nextval as concept_code,
-  'Drug',
+  'OMOP'||nextval('new_vocab') as concept_code,
   null as possible_excipient,
+  'Drug',
   to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
   null as invalid_reason
 from pi;
@@ -194,46 +162,46 @@ select
   'JMDC' as vocabulary_id,
   'Brand Name' as concept_class_id,
   null as standard_concept,
-  'OMOP'||new_vocab.nextval as concept_code,
+  'OMOP'||nextval('new_vocab') as concept_code,
   null as possible_excipient,
-  null as valid_start_date, null as valid_end_date, null as invalid_reason
+  'Drug',
+  to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
+  null as invalid_reason
 from j where brand_name is not null
 ;
 
 -- Dose Forms
 -- Create rough dose forms
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Inhalant', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Capsule', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Tablet', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Injectant', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Topical', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Patch', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
-insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, possible_excipient, valid_start_date, valid_end_date, invalid_reason)
-  values ('Unknown', 'JMDC', 'Dose Form', null, 'OMOP'||new_vocab.nextval, null, null, null, null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Inhalant', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Capsule', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Tablet', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Injectant', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Topical', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+  values ('Patch', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null,to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+--insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+--  values ('Unknown', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 
 -- Units
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('u', 'JMDC', 'Unit', null, 'u', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('iu', 'JMDC', 'Unit', null, 'iu', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('g', 'JMDC', 'Unit', null, 'g', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('mg', 'JMDC', 'Unit', null, 'mg', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('mlv', 'JMDC', 'Unit', null, 'mlv', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('ml', 'JMDC', 'Unit', null, 'ml', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+ values ('%', 'JMDC', 'Unit', null, '%', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 
 /*************************************************
 * 3. Populate IRS *
@@ -323,6 +291,7 @@ insert into internal_relationship_stage (concept_code_1, vocabulary_id_1, concep
 ************************************************/
 
 -- Write mappings to RxNorm Dose Forms
+/*
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 19082224, 1); --Topical Cream
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 19082200, 2); --Rectal Suppository
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 19130307, 3); --Medicated Pad
@@ -532,7 +501,7 @@ Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 46275062, 12); --
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 19095915, 13); --
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 19082260, 14); --
-
+*/
 -- write mappings to real units
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('u', 'JMDC', 8510, 1, 1); -- to unit
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('iu', 'JMDC', 8510, 1, 1); -- to international unit
