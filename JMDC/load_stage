@@ -210,15 +210,15 @@ insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, s
 -- 3.1 create relationship between products and ingredients
 insert into internal_relationship_stage
 select distinct
-  pi.drug_code as concept_code_1, 'JMDC' as vocabulary_id_1,
-  dcs.concept_code as concept_code_2, 'JMDC' as vocabulary_id_2
+  pi.drug_code as concept_code_1,
+  dcs.concept_code as concept_code_2
 from pi join drug_concept_stage dcs on dcs.concept_name=pi.ing_name and dcs.concept_class_id='Ingredient';
 
 -- 3.2 create relationship between products and BN
 insert into internal_relationship_stage
 select distinct
-  j.drug_code as concept_code_1, 'JMDC' as vocabulary_id_1,
-  dcs.concept_code as concept_code_2, 'JMDC' as vocabulary_id_2
+  j.drug_code as concept_code_1, 
+  dcs.concept_code as concept_code_2
 from j join drug_concept_stage dcs on dcs.concept_name=j.brand_name and dcs.concept_class_id='Brand Name'
 ;
 -- 3.3 create relationship between products and DF
@@ -254,10 +254,10 @@ with u as (
           regexp_replace(lower(translate(standardized_unit, 'a(),', 'a')), '([0-9\.,]+)([a-z%]+)([0-9\.,]+)?([a-z%]+)?([0-9\.,]+)?([a-z%]+)?', '\1|\2|\3|\4|\5|\6') as dose
         from j -- join drug_concept_stage dcs on dcs.concept_code=j.drug_code
         where standardized_unit not like '%Sheet%' and standardized_unit not like '%cm*%' and standardized_unit not like '%mm*%'
-        and drug_code not in (100000063966, 100000013362) -- immunoglobulin with histamine, bacitracin/fradiomycin sulfate - ??????????
-      )
-    )
-  )
+        and drug_code not in ('100000063966', '100000013362') -- immunoglobulin with histamine, bacitracin/fradiomycin sulfate - ??????????
+      ) a
+    ) b
+  ) c
 )
 select distinct
   u.drug_code as concept_code_1, 'JMDC' as vocabulary_id_1,
