@@ -272,15 +272,15 @@ from u join drug_concept_stage df on df.concept_name=u.df and df.concept_class_i
 -- 3.3.1. Patches
 insert into internal_relationship_stage
 select
-  drug_code as concept_code_1, 'JMDC' as vocabulary_id_1,
-  (select concept_code from drug_concept_stage where concept_name='Patch') as concept_code_2, 'JMDC' as vocabulary_id_2
+  drug_code as concept_code_1, 
+  (select concept_code from drug_concept_stage where concept_name='Patch') as concept_code_2
 from j where standardized_unit like '%Sheet%' or standardized_unit like '%cm*%' or standardized_unit like '%mm*%';
 
 -- 3.3.2 Manual ones
-insert into internal_relationship_stage (concept_code_1, vocabulary_id_1, concept_code_2, vocabulary_id_2)
-  values ('100000063966', 'JMDC', (select concept_code from drug_concept_stage where concept_name='Injectant'), 'JMDC'); -- immunoglobulin with histamine
-insert into internal_relationship_stage (concept_code_1, vocabulary_id_1, concept_code_2, vocabulary_id_2)
-  values ('100000013362', 'JMDC', (select concept_code from drug_concept_stage where concept_name='Topical'), 'JMDC'); -- bacitracin/fradiomycin sulfate
+insert into internal_relationship_stage (concept_code_1, concept_code_2)
+  values ('100000063966', (select concept_code from drug_concept_stage where concept_name='Injectant')); -- immunoglobulin with histamine
+insert into internal_relationship_stage (concept_code_1, concept_code_2)
+  values ('100000013362', (select concept_code from drug_concept_stage where concept_name='Topical')); -- bacitracin/fradiomycin sulfate
 
 
 
