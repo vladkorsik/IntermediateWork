@@ -1,7 +1,7 @@
 
-CREATE INDEX idx_irs_cc ON internal_relationship_stage (concept_code_1, concept_code_2);
-CREATE INDEX idx_dcs_cc ON drug_concept_stage (concept_code);
-CREATE INDEX idx_ds_cc ON ds_stage (drug_concept_code,ingredient_concept_code);
+CREATE UNIQUE INDEX idx_irs_cc ON internal_relationship_stage (concept_code_1, concept_code_2);
+CREATE UNIQUE INDEX idx_dcs_cc ON drug_concept_stage (concept_code);
+CREATE UNIQUE INDEX idx_ds_cc ON ds_stage (drug_concept_code,ingredient_concept_code);
 
 
 /*
