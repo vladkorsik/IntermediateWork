@@ -2,6 +2,8 @@
 CREATE UNIQUE INDEX idx_irs_cc ON internal_relationship_stage (concept_code_1, concept_code_2);
 CREATE UNIQUE INDEX idx_dcs_cc ON drug_concept_stage (concept_code);
 CREATE UNIQUE INDEX idx_ds_cc ON ds_stage (drug_concept_code,ingredient_concept_code);
+CREATE UNIQUE INDEX idx_rtc_pr ON relationship_to_concept (concept_code_1,concept_id_2);
+CREATE UNIQUE INDEX idx_rtc_cc ON relationship_to_concept (concept_code_1,precedence);
 
 
 /*
@@ -512,7 +514,6 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('g', 'JMDC', 8587, 2, 1); -- to milliliter
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('mg', 'JMDC', 8576, 1, 1); -- to milligram
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('mg', 'JMDC', 8587, 2, 0.001); -- to milliliter
-insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('ml', 'JMDC', 8587, 1, 1); -- to milliliter
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('mlv', 'JMDC', 8587, 1, 1); -- to milliliter
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('mlv', 'JMDC', 8576, 2, 1000); -- to milligram
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('ml', 'JMDC', 8587, 1, 1); -- to milliliter
