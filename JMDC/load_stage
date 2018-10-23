@@ -555,3 +555,7 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 
 -- Ingredients
 -- Brand Names
+select distinct * from drug_concept_stage dc
+join concept c on lower(c.concept_name) = lower(dc.concept_name)
+                       where dc.concept_class_id = 'Brand Name'
+and c.concept_class_id = 'Brand Name' and c.vocabulary_id like 'Rx%' and c.invalid_reason is null
