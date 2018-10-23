@@ -1,4 +1,39 @@
 
+create or replace function instr(str text, sub text, startpos int = 1, occurrence int = 1)
+returns int language plpgsql
+as $$
+declare
+    tail text;
+    shift int;
+    pos int;
+    i int;
+begin
+    shift:= 0;
+    if startpos = 0 or occurrence <= 0 then
+        return 0;
+    end if;
+    if startpos < 0 then
+        str:= reverse(str);
+        sub:= reverse(sub);
+        pos:= -startpos;
+    else
+        pos:= startpos;
+    end if;
+    for i in 1..occurrence loop
+        shift:= shift+ pos;
+        tail:= substr(str, shift);
+        pos:= strpos(tail, sub);
+        if pos = 0 then
+            return 0;
+        end if;
+    end loop;
+    if startpos > 0 then
+        return pos+ shift- 1;
+    else
+        return length(str)- pos- shift+ 1;
+    end if;
+end $$;
+
 CREATE UNIQUE INDEX idx_irs_cc ON internal_relationship_stage (concept_code_1, concept_code_2);
 CREATE UNIQUE INDEX idx_dcs_cc ON drug_concept_stage (concept_code);
 CREATE UNIQUE INDEX idx_ds_cc ON ds_stage (drug_concept_code,ingredient_concept_code);
@@ -8,20 +43,15 @@ CREATE UNIQUE INDEX idx_rtc_cc ON relationship_to_concept (concept_code_1,preced
 
 /*
 o   A = ampoule (parenteral)
-
 o   Syg = syringe
-
 o   Bag = infusion bag
-
 o   V = vial (oral)
-
 o   Bot = bottle (topical or oral)
-
 In the Brand Name column, there are records "Deleted NHI price" and "Crude Drugs". Disregard.
 */
 
 DROP SEQUENCE IF EXISTS new_vocab ;
-CREATE SEQUENCE new_vocab INCREMENT BY 1 START WITH 636166 CACHE 20; 
+CREATE SEQUENCE new_vocab INCREMENT BY 1 START WITH 636166 CACHE 20;
 
 /*************************************************
 * 0. Clean the data and extract non drugs *
@@ -114,8 +144,8 @@ update j set standardized_unit = regexp_replace(standardized_unit, '\(w/Dil\)', 
 * 1. Create parsed Ingredients and relationships *
 *************************************************/
 DROP TABLE if exists PI;
-CREATE TABLE pi 
-AS 
+CREATE TABLE pi
+AS
 SELECT drug_code, general_name AS ing_name
 FROM j
 WHERE general_name NOT LIKE '%/%' AND general_name NOT LIKE '% and %'
@@ -222,7 +252,7 @@ from pi join drug_concept_stage dcs on dcs.concept_name=pi.ing_name and dcs.conc
 -- 3.2 create relationship between products and BN
 insert into internal_relationship_stage
 select distinct
-  j.drug_code as concept_code_1, 
+  j.drug_code as concept_code_1,
   dcs.concept_code as concept_code_2
 from j join drug_concept_stage dcs on dcs.concept_name=j.brand_name and dcs.concept_class_id='Brand Name'
 ;
@@ -246,8 +276,8 @@ with u as (
   from (
     select
       drug_code,
-      cast(substr(dose, s1+1, s2-s1-1) as varchar(20)) as u1,
-      cast(substr(dose, s3+1, s4-s3-1) as varchar(20)) as u2,
+      replace(cast(substr(dose, s1+1, s2-s1) as varchar(20)),'|','') as u1,
+      replace(cast(substr(dose, s3+1, s4-s3) as varchar(20)),'|','') as u2,
       cast(substr(dose, s5+1) as varchar(20)) as u3
     from (
       select
@@ -265,16 +295,18 @@ with u as (
   ) c
 )
 select distinct
-  u.drug_code as concept_code_1, 'JMDC' as vocabulary_id_1,
-  df.concept_code as concept_code_2, 'JMDC' as vocabulary_id_2
+  u.drug_code as concept_code_1,
+  df.concept_code as concept_code_2
 from u join drug_concept_stage df on df.concept_name=u.df and df.concept_class_id='Dose Form'
 ;
+
 -- 3.3.1. Patches
 insert into internal_relationship_stage
-select
-  drug_code as concept_code_1, 
+select distinct
+  drug_code as concept_code_1,
   (select concept_code from drug_concept_stage where concept_name='Patch') as concept_code_2
-from j where standardized_unit like '%Sheet%' or standardized_unit like '%cm*%' or standardized_unit like '%mm*%';
+from j where standardized_unit like '%Sheet%' or standardized_unit like '%cm*%' or standardized_unit like '%mm*%'
+;
 
 -- 3.3.2 Manual ones
 insert into internal_relationship_stage (concept_code_1, concept_code_2)
@@ -411,6 +443,7 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 19135440, 112); --
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 45775488, 113); --
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Unknown', 'JMDC', 44784844, 114); --
+*/
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Topical', 'JMDC', 19082225, 1); --Topical Lotion
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Topical', 'JMDC', 19082224, 2); --Topical Cream
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Topical', 'JMDC', 40228565, 3); --Oil
@@ -477,7 +510,6 @@ Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Capsule', 'JMDC', 19103220, 4); --12 hour Extended Release Capsule
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Capsule', 'JMDC', 19082256, 5); --24 Hour Extended Release Capsule
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Capsule', 'JMDC', 19021887, 6); --Capsule
-Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Capsule', 'JMDC', 19082255, 7); --Delayed Release Oral Capsule
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Tablet', 'JMDC', 19082573, 1); --Oral Tablet
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Tablet', 'JMDC', 19082076, 2); --Disintegrating Oral Tablet
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Tablet', 'JMDC', 19001949, 3); --Delayed Release Oral Tablet
