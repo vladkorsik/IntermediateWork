@@ -162,7 +162,7 @@ from pi;
 
 -- Brand Name
 insert into drug_concept_stage
-select
+select distinct
   brand_name as concept_name,
   'JMDC' as vocabulary_id,
   'Brand Name' as concept_class_id,
