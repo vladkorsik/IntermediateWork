@@ -1,4 +1,3 @@
-
 create or replace function instr(str text, sub text, startpos int = 1, occurrence int = 1)
 returns int language plpgsql
 as $$
@@ -63,11 +62,9 @@ select distinct
   general_name||' '||standardized_unit||' ['||brand_name||']' as concept_name, 'JMDC', 'Device', 'S', drug_code, null, 'Device', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null
   from jmdc
   where
-  general_name ~* '(99mTc)|(131I)|(89Sr)|(9 Cl)|(111In)|(13C)|(51Cr)|(201Tl)|(133Xe)|(90Y)|(81mKr)|(90Y)|(67Ga)|cellulose,oxidized|purified tuberculin|blood|plasma' -- cellulose = Surgicel Absorbable Hemostat
+  general_name ~* '(99mTc)|(131I)|(89Sr)|(9 Cl)|(111In)|(13C)|(123I)|(51Cr)|(201Tl)|(133Xe)|(90Y)|(81mKr)|(90Y)|(67Ga)|cellulose,oxidized|purified tuberculin|blood|plasma' -- cellulose = Surgicel Absorbable Hemostat
   and not general_name ~* 'coagulation|an extract from hemolysed blood' -- coagulation factors
   ;
-
-
 
 -- Create copy of input data
 drop table if exists j;
@@ -77,6 +74,10 @@ where drug_code not in (
   select concept_code from non_drug
 );
 
+delete from j
+where general_name in ('allergen extract(therapeutic)');
+
+drop table if exists supplier;
 create table supplier
 as
 select distinct trim(substring(brand_name,' \w+$')) as concept_name,drug_code from j -- upper case suppliers in the end of the line
@@ -222,7 +223,8 @@ select
   'Drug',
   to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
   null as invalid_reason
-from pi;
+  from ( select distinct ing_name
+from pi) a;
 
 -- Brand Name
 insert into drug_concept_stage
@@ -592,7 +594,7 @@ Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 46275062, 12); --
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 19095915, 13); --
 Insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence) values ('Injectant', 'JMDC', 19082260, 14); --
-*/
+
 -- write mappings to real units
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('u', 'JMDC', 8510, 1, 1); -- to unit
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('iu', 'JMDC', 8510, 1, 1); -- to international unit
@@ -613,6 +615,14 @@ from aut_ingredient_mapped
 join drug_concept_stage dc on dc.concept_name = source_concept_name and concept_class_id = 'Ingredient'
 where precedence!=0;
 
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct dc.concept_code,'JMDC',c2.concept_id, rank() over (partition by dc.concept_code order by c2.concept_id)
+from drug_concept_stage dc
+left join relationship_to_concept r on concept_code = concept_code_1
+join concept c2 on lower(C2.concept_name) = lower(dc.concept_name)
+where dc.concept_class_id = 'Ingredient' and concept_id_2 is  null
+and c2.standard_concept = 'S' and c2.concept_class_id = 'Ingredient';
+
 -- Brand Names
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
 select distinct dc.concept_code,'JMDC',c.concept_id, rank() over (partition by dc.concept_code order by c.concept_id)
@@ -631,8 +641,8 @@ where dc.concept_class_id = 'Brand Name'
 and dc.concept_code not in (select concept_code_1 from relationship_to_concept);
 ;
 
-/*
-select * from drug_concept_stage
-left join relationship_to_concept on concept_code = concept_code_1
-where concept_class_id = 'Ingredient' and concept_id_2 is null;
-*/
+select * from drug_concept_stage dc
+left join relationship_to_concept r on concept_code = concept_code_1
+join concept c2 on lower(C2.concept_name) = lower(dc.concept_name)
+where dc.concept_class_id = 'Ingredient' and concept_id_2 is  null
+and c2.concept_class_id = 'Precise Ingredient';
