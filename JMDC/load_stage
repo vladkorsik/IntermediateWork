@@ -93,10 +93,19 @@ where brand_name in (
   'Sulfur and Camphor',
   'Sulfur,Salicylic Acid and Thianthol',
   'Swertia and Sodium Bicarbonate',
-  'Weak Opium Alkaloids and Scopolamine'
+  'Weak Opium Alkaloids and Scopolamine',
+  '5-FU'
 )
 or lower(brand_name)=lower(general_name)
+or brand_name ~* 'Sulfate|Nitrate|Oxide|Chloride|/|Acid|Sodium|Aluminum|Potassium|Water for Injection|Globulin|Absorptive Ointment|Allergen|Apricot Kernel Water'
 ;
+update j
+set brand_name = null
+where brand_name in (
+select brand_name
+from j 
+join devv5.concept c on lower(j.brand_name)=lower(c.concept_name)
+where c.concept_class_id like '%Ingredient' );
 
 -- remove junk from standard_unit
 update j set standardized_unit = regexp_replace(standardized_unit, '\(forGeneralDiagnosis\)', '') where standardized_unit like '%(forGeneralDiagnosis)%';
@@ -172,6 +181,7 @@ select distinct
   null as invalid_reason
 from j;
 
+
 -- Devices
 insert into drug_concept_stage
 select * from non_drug;
@@ -192,7 +202,7 @@ from pi;
 
 -- Brand Name
 insert into drug_concept_stage
-select distinct
+select 
   brand_name as concept_name,
   'JMDC' as vocabulary_id,
   'Brand Name' as concept_class_id,
@@ -202,7 +212,8 @@ select distinct
   'Drug',
   to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
   null as invalid_reason
-from j where brand_name is not null
+from 
+(select distinct brand_name from j where brand_name is not null) a
 ;
 
 -- Dose Forms
@@ -552,10 +563,26 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('ml', 'JMDC', 8576, 2, 1000); -- to milligram
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence, conversion_factor) values ('%', 'JMDC', 8554, 2, 1);
 
-
 -- Ingredients
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct dc.concept_code,'JMDC',concept_id,precedence from aut_ingredient_mapped
+join drug_concept_stage dc on dc.concept_name = source_concept_name and concept_class_id = 'Ingredient'
+where precedence!=0;
+
 -- Brand Names
-select distinct * from drug_concept_stage dc
-join concept c on lower(c.concept_name) = lower(dc.concept_name)
-                       where dc.concept_class_id = 'Brand Name'
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct dc.concept_code,'JMDC',c.concept_id, rank() over (partition by dc.concept_code order by c.concept_id)
+from drug_concept_stage dc
+join devv5.concept c on lower(c.concept_name) = lower(dc.concept_name)
+where dc.concept_class_id = 'Brand Name'
 and c.concept_class_id = 'Brand Name' and c.vocabulary_id like 'Rx%' and c.invalid_reason is null
+;
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct dc.concept_code,'JMDC',c2.concept_id, rank() over (partition by dc.concept_code order by c2.concept_id)
+from drug_concept_stage dc
+join devv5.concept c on lower(c.concept_name) = lower(dc.concept_name) and c.invalid_reason = 'U' and c.concept_class_id = 'Brand Name'
+join devv5.concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null
+join devv5.concept  c2 on cr.concept_id_2 = c2.concept_id and relationship_id = 'Concept replaced by'
+where dc.concept_class_id = 'Brand Name' 
+and dc.concept_code not in (select concept_code_1 from relationship_to_concept);
+;
