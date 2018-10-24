@@ -67,6 +67,8 @@ select distinct
   and not general_name ~* 'coagulation|an extract from hemolysed blood' -- coagulation factors
   ;
 
+
+
 -- Create copy of input data
 drop table if exists j;
 create table j as
@@ -75,12 +77,27 @@ where drug_code not in (
   select concept_code from non_drug
 );
 
-select distinct trim(substring(brand_name,' \w+$')), * from j
+create table supplier
+as
+select distinct trim(substring(brand_name,' \w+$')) as concept_name,drug_code from j -- upper case suppliers in the end of the line
 where substring(brand_name,' \w+$')=upper(substring(brand_name,' \w+$'))
-and length(substring(brand_name,' \w+$'))>4 and trim(substring(brand_name,' \w+$')) not in ('A240','')
+and length(substring(brand_name,' \w+$'))>4 and trim(substring(brand_name,' \w+$')) not in ('A240','VIII')
+UNION
+select distinct trim(substring(brand_name,'^\w+ ')) as concept_name,drug_code from j -- upper case suppliers in the beginning of the line
+where substring(brand_name,'^\w+ ')=upper(substring(brand_name,'^\w+ '))
+and length(substring(brand_name,'^\w+ '))>4 and trim(substring(brand_name,'^\w+ ')) not in ('A240','VIII')
 ;
 
-
+update j
+set brand_name = replace(brand_name,substring(brand_name,' \w+$'),'')
+where substring(brand_name,' \w+$')=upper(substring(brand_name,' \w+$'))
+and length(substring(brand_name,' \w+$'))>4 and trim(substring(brand_name,' \w+$')) not in ('A240','VIII')
+;
+update j
+set brand_name = replace(brand_name,substring(brand_name,'^\w+ '),'')
+where substring(brand_name,'^\w+ ')=upper(substring(brand_name,'^\w+ '))
+and length(substring(brand_name,'^\w+ '))>4 and trim(substring(brand_name,'^\w+ ')) not in ('A240','VIII')
+;
 -- Remove pseudo brands
 update j
 set brand_name = null
@@ -103,15 +120,16 @@ where brand_name in (
   '5-FU'
 )
 or lower(brand_name)=lower(general_name)
-or brand_name ~* 'Sulfate|Nitrate|Oxide|Chloride|/|Acid|Sodium|Aluminum|Potassium|Water for Injection|Globulin|Absorptive Ointment|Allergen|Apricot Kernel Water'
+or brand_name ~* 'Sulfate|Nitrate|Oxide|Chloride|/|Acid|Sodium|Aluminum|Potassium|Water for Injection|Globulin|Absorptive Ointment|Allergen|Water'
 ;
 update j
 set brand_name = null
 where brand_name in (
 select brand_name
-from j 
+from j
 join devv5.concept c on lower(j.brand_name)=lower(c.concept_name)
 where c.concept_class_id like '%Ingredient' );
+
 
 -- remove junk from standard_unit
 update j set standardized_unit = regexp_replace(standardized_unit, '\(forGeneralDiagnosis\)', '') where standardized_unit like '%(forGeneralDiagnosis)%';
@@ -208,7 +226,7 @@ from pi;
 
 -- Brand Name
 insert into drug_concept_stage
-select 
+select
   brand_name as concept_name,
   'JMDC' as vocabulary_id,
   'Brand Name' as concept_class_id,
@@ -218,24 +236,24 @@ select
   'Drug',
   to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),
   null as invalid_reason
-from 
+from
 (select distinct brand_name from j where brand_name is not null) a
 ;
 
 -- Dose Forms
 -- Create rough dose forms
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Inhalant', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+  values ('Inhalant', 'JMDC', 'Dose Form', null, 'Inhalant', null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Capsule', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+  values ('Capsule', 'JMDC', 'Dose Form', null, 'Capsule', null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Tablet', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+  values ('Tablet', 'JMDC', 'Dose Form', null, 'Tablet', null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Injectant', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+  values ('Injectant', 'JMDC', 'Dose Form', null, 'Injectant', null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Topical', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),null);
+  values ('Topical', 'JMDC', 'Dose Form', null, 'Topical', null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'),null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-  values ('Patch', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null,to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+  values ('Patch', 'JMDC', 'Dose Form', null, 'Patch', null,to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 --insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
 --  values ('Unknown', 'JMDC', 'Dose Form', null, 'OMOP'||nextval('new_vocab'), null, to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 
@@ -254,6 +272,21 @@ insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, s
  values ('ml', 'JMDC', 'Unit', null, 'ml', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
  values ('%', 'JMDC', 'Unit', null, '%', 'Drug', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null);
+
+--Supplier
+insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
+select distinct
+  concept_name,
+  'JMDC' as vocabulary_id,
+  'Supplier' as concept_class_id,
+  null as standard_concept,
+   'OMOP'||nextval('new_vocab') as concept_code,
+   'Drug',
+  to_date('19700101','YYYYMMDD'),
+  to_date('20991231','YYYYMMDD'),
+  null as invalid_reason
+from (
+  select distinct concept_name from supplier) s;
 
 /*************************************************
 * 3. Populate IRS *
@@ -331,7 +364,11 @@ insert into internal_relationship_stage (concept_code_1, concept_code_2)
 insert into internal_relationship_stage (concept_code_1, concept_code_2)
   values ('100000013362', (select concept_code from drug_concept_stage where concept_name='Topical')); -- bacitracin/fradiomycin sulfate
 
-
+-- 3.3.3 Suppliers
+insert into internal_relationship_stage (concept_code_1, concept_code_2)
+    select drug_code,concept_code
+    from supplier join drug_concept_stage using (concept_name)
+where concept_class_id = 'Supplier';
 
 /*********************************
 * 4. Create and link Drug Strength
@@ -571,7 +608,8 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 
 -- Ingredients
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
-select distinct dc.concept_code,'JMDC',concept_id,precedence from aut_ingredient_mapped
+select distinct dc.concept_code,'JMDC',concept_id,rank() over (partition by dc.concept_code order by concept_id)
+from aut_ingredient_mapped
 join drug_concept_stage dc on dc.concept_name = source_concept_name and concept_class_id = 'Ingredient'
 where precedence!=0;
 
@@ -589,6 +627,12 @@ from drug_concept_stage dc
 join devv5.concept c on lower(c.concept_name) = lower(dc.concept_name) and c.invalid_reason = 'U' and c.concept_class_id = 'Brand Name'
 join devv5.concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null
 join devv5.concept  c2 on cr.concept_id_2 = c2.concept_id and relationship_id = 'Concept replaced by'
-where dc.concept_class_id = 'Brand Name' 
+where dc.concept_class_id = 'Brand Name'
 and dc.concept_code not in (select concept_code_1 from relationship_to_concept);
 ;
+
+/*
+select * from drug_concept_stage
+left join relationship_to_concept on concept_code = concept_code_1
+where concept_class_id = 'Ingredient' and concept_id_2 is null;
+*/
