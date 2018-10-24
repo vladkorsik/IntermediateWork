@@ -75,6 +75,12 @@ where drug_code not in (
   select concept_code from non_drug
 );
 
+select distinct trim(substring(brand_name,' \w+$')), * from j
+where substring(brand_name,' \w+$')=upper(substring(brand_name,' \w+$'))
+and length(substring(brand_name,' \w+$'))>4 and trim(substring(brand_name,' \w+$')) not in ('A240','')
+;
+
+
 -- Remove pseudo brands
 update j
 set brand_name = null
