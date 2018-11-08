@@ -1,0 +1,24 @@
+insert into concept_stage 
+(concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason)
+null, atc_name, 'Drug', 'ATC', 
+case when length (atc_code) = 7 then 'ATC 5th'
+when length (atc_code) = 5 then 'ATC 4th'
+when length (atc_code) = 4 then 'ATC 3rd'
+when length (atc_code) = 3 then 'ATC 2nd'
+when length (atc_code) = 1 then 'ATC 1th'
+else null end,
+'C', atc_code, 
+TO_DATE('19700101', 'YYYYMMDD'),
+TO_DATE('20991231', 'YYYYMMDD'),
+null
+from atc_drugs_scraper;
+
+insert concept_relationship_stage 
+(concept_id_1,concept_id_2,concept_code_1,concept_code_2,vocabulary_id_1,vocabulary_id_2,relationship_id,valid_start_date,valid_end_date,invalid_reason)
+select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', TO_DATE('19990101', 'YYYYMMDD'), TO_DATE('20991231', 'YYYYMMDD'),null
+from final_assembly f
+join concept c
+using (concept_id)
+;
+
+
