@@ -62,7 +62,7 @@ select distinct
   general_name||' '||standardized_unit||' ['||brand_name||']' as concept_name, 'JMDC', 'Device', 'S', drug_code, null, 'Device', to_date('19700101','YYYYMMDD'), to_date('20991231','YYYYMMDD'), null
   from jmdc
   where
-  general_name ~* '(99mTc)|(131I)|(89Sr)|(9 Cl)|(111In)|(13C)|(123I)|(51Cr)|(201Tl)|(133Xe)|(90Y)|(81mKr)|(90Y)|(67Ga)|cellulose,oxidized|purified tuberculin|blood|plasma' -- cellulose = Surgicel Absorbable Hemostat
+  general_name ~* '(99mTc)|(131I)|(89Sr)|(123I)|(9 Cl)|(111In)|(13C)|(123I)|(51Cr)|(201Tl)|(133Xe)|(90Y)|(81mKr)|(90Y)|(67Ga)|cellulose,oxidized|purified tuberculin|blood|plasma|diagnostic|nutrition|patch test|free milk|vitamin/|white ointment|simple syrup|electrolyte|allergen extract(therapeutic)|simple ointment' -- cellulose = Surgicel Absorbable Hemostat
   and not general_name ~* 'coagulation|an extract from hemolysed blood' -- coagulation factors
   ;
 
@@ -80,14 +80,18 @@ where general_name in ('allergen extract(therapeutic)');
 drop table if exists supplier;
 create table supplier
 as
-select distinct trim(substring(brand_name,' \w+$')) as concept_name,drug_code from j -- upper case suppliers in the end of the line
+select trim(substring(brand_name,' \w+$')) as concept_name,drug_code from j -- upper case suppliers in the end of the line
 where substring(brand_name,' \w+$')=upper(substring(brand_name,' \w+$'))
 and length(substring(brand_name,' \w+$'))>4 and trim(substring(brand_name,' \w+$')) not in ('A240','VIII')
 UNION
-select distinct trim(substring(brand_name,'^\w+ ')) as concept_name,drug_code from j -- upper case suppliers in the beginning of the line
+select trim(substring(brand_name,'^\w+ ')) as concept_name,drug_code from j -- upper case suppliers in the beginning of the line
 where substring(brand_name,'^\w+ ')=upper(substring(brand_name,'^\w+ '))
 and length(substring(brand_name,'^\w+ '))>4 and trim(substring(brand_name,'^\w+ ')) not in ('A240','VIII')
 ;
+--ingredient
+delete from supplier 
+where drug_code='100000049525'
+and cocnept_name = 'GHRP';
 
 update j
 set brand_name = replace(brand_name,substring(brand_name,' \w+$'),'')
@@ -131,6 +135,11 @@ from j
 join devv5.concept c on lower(j.brand_name)=lower(c.concept_name)
 where c.concept_class_id like '%Ingredient' );
 
+update j
+set brand_name = null
+where brand_name in (
+select concept_name
+from supplier);
 
 -- remove junk from standard_unit
 update j set standardized_unit = regexp_replace(standardized_unit, '\(forGeneralDiagnosis\)', '') where standardized_unit like '%(forGeneralDiagnosis)%';
@@ -188,6 +197,13 @@ SELECT drug_code, ing_name
 FROM (SELECT drug_code, REPLACE(general_name,' and ','/') AS concept_name
       FROM j) j,
      UNNEST(STRING_TO_ARRAY(j.concept_name,'/')) AS ing_name;
+     
+delete from pi
+where ing_name = 'rhizome'--eliminating wrong parsing
+;
+update pi
+set ing_name = regexp_replace (ing_name,' (genetical recombination)','')
+where ing_name ~ 'genetical recombination';
 
 /************************************
 * 2. Populate drug concept stage *
@@ -277,7 +293,7 @@ insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, s
 
 --Supplier
 insert into drug_concept_stage (concept_name, vocabulary_id, concept_class_id, standard_concept, concept_code, domain_id, valid_start_date, valid_end_date, invalid_reason)
-select distinct
+select
   concept_name,
   'JMDC' as vocabulary_id,
   'Supplier' as concept_class_id,
@@ -622,6 +638,8 @@ left join relationship_to_concept r on concept_code = concept_code_1
 join concept c2 on lower(C2.concept_name) = lower(dc.concept_name)
 where dc.concept_class_id = 'Ingredient' and concept_id_2 is  null
 and c2.standard_concept = 'S' and c2.concept_class_id = 'Ingredient';
+
+
 
 -- Brand Names
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
