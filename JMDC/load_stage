@@ -205,6 +205,14 @@ update pi
 set ing_name = regexp_replace (ing_name,' (genetical recombination)','')
 where ing_name ~ 'genetical recombination';
 
+insert into pi
+select concept_name, drug_code
+from pi join aut_parsed_ingr
+using (ing_name);
+
+delete pi
+where ing_name in (select ing_name from aut_parsed_ingr);
+
 /************************************
 * 2. Populate drug concept stage *
 *************************************/
@@ -627,9 +635,19 @@ insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id
 -- Ingredients
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
 select distinct dc.concept_code,'JMDC',concept_id,rank() over (partition by dc.concept_code order by concept_id)
-from aut_ingredient_mapped
+from aut_ingredient_mapped_2
 join drug_concept_stage dc on dc.concept_name = source_concept_name and concept_class_id = 'Ingredient'
 where precedence!=0;
+
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct dc.concept_code,'JMDC',concept_id_2, case when precedence is null then 1 else precedence end
+from aut_ingredient_mapped a
+join drug_concept_stage dc on dc.concept_name = a.concept_name and concept_class_id = 'Ingredient'
+;
+
+insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
+select distinct concept_name,'JMDC',concept_id, 1
+from aut_parsed_ingr;
 
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
 select distinct dc.concept_code,'JMDC',c2.concept_id, rank() over (partition by dc.concept_code order by c2.concept_id)
@@ -638,8 +656,6 @@ left join relationship_to_concept r on concept_code = concept_code_1
 join concept c2 on lower(C2.concept_name) = lower(dc.concept_name)
 where dc.concept_class_id = 'Ingredient' and concept_id_2 is  null
 and c2.standard_concept = 'S' and c2.concept_class_id = 'Ingredient';
-
-
 
 -- Brand Names
 insert into relationship_to_concept (concept_code_1, vocabulary_id_1, concept_id_2, precedence)
