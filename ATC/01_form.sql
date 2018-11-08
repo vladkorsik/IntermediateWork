@@ -36,6 +36,10 @@ create table dev_ingredient_stage_1
 as select * from dev_ingredient_stage;
 
 
+--fix the data shift from the website
+update atc_drugs_scraper
+set ddd = 60, u = 'mg',adm_r = 'O'
+where atc_code = 'B01AF03';
 
 -- updating source data: forms
 UPDATE atc_1_comb
@@ -49,10 +53,11 @@ WHERE atc_code = 'G02BB01';
 
 
  -- add buccal and others
+ -- not included: lamella
 drop table if exists forms ;
 create table forms as
 (
-select concept_name as form, 'inh' as label
+select concept_name as form, 'inhal' as label
 from concept
 where concept_class_id = 'Dose Form' and concept_name like '%Inhal%' and concept_name not like '%Nasal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
 
@@ -88,6 +93,18 @@ where concept_class_id = 'Dose Form' and concept_name = 'Medicated Pad' and voca
 
 union all
 
+select concept_name, 'td' as flag
+from concept
+where concept_class_id = 'Dose Form' and (concept_name like 'Transdermal%' or concept_name = 'Topical gel') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    
+union all
+    
+select concept_name, 'td patch' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Transdermal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    --TD
+    --TD patch
+    
 select concept_name, 'i' as flag
 from concept
 where concept_class_id = 'Dose Form' and concept_name = 'Irrigation Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
@@ -127,6 +144,100 @@ union all
 select concept_name, 'n' as flag
 from concept
 where concept_class_id = 'Dose Form' and concept_name like '%Nasal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'chewing gum' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'chewing gum' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'implant' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Drug Implant' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'intravesical' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Irrigation Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'ointment' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Cream|Ointment' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    
+union all
+    
+select concept_name, 'oral aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like 'Oral Spray' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 's.c. implant' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Drug Implant') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'inh.aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+  
+union all
+    
+select concept_name, 'inhal. powder' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Inhalant Powder','Metered Dose Inhaler','Dry Powder Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Nasal Inhaler','Metered Dose Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.powder' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Inhalant Powder','Metered Dose Inhaler','Dry Powder Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.solution' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Inhalant Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'instill.sol.' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Topical Solution','Irrigation Solution') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
 );
 
 insert into forms 
@@ -148,14 +259,11 @@ join concept c2 on cr2.concept_id_2 = c2.concept_id and c2.vocabulary_id = 'RxNo
 where c.concept_code like 'A01A%' and c.vocabulary_id = 'ATC'
 ;
 
--- re-do reference
-
 -- creating reference table with atc_code and corresonding code+form
 create table reference as
-select atc_code,concept_code 
-from drug_concept_stage 
-join atc_drugs_scraper on substring (concept_name,'\w+') = atc_code
-;
+select atc_code, case when form is not null then atc_code||' '||form else atc_code end as concept_code
+from atc_drugs_scraper
+left join forms on lower(label) = lower(adm_r);
 
 
 --missing forms
