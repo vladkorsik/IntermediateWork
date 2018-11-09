@@ -6,28 +6,23 @@ join concept c on c.concept_id = cr.concept_id_1
 join concept c2 on c2.concept_id = cr.concept_id_2
 where cr.relationship_id = 'ATC - RxNorm name' and cr.invalid_reason is null;
 
+-- deprecate old ingredients
+insert into concept_relationship_manual
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, current_date, TO_DATE('20991231', 'YYYYMMDD'), 'D'
+from concept_relationship cr
+join concept c on c.concept_id = cr.concept_id_1
+join concept c2 on c2.concept_id = cr.concept_id_2
+where cr.relationship_id = 'ATC - RxNorm' and cr.invalid_reason is null and c2.concept_class_id in ('Ingredient','Precise Ingredient')
+and not exists( select 1 from final_assembly f where f.atc_code = c.concept_code and f.concept_id = c2.concept_id)
 
-insert into concept_stage 
-(concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason)
-null, atc_name, 'Drug', 'ATC', 
-case when length (atc_code) = 7 then 'ATC 5th'
-when length (atc_code) = 5 then 'ATC 4th'
-when length (atc_code) = 4 then 'ATC 3rd'
-when length (atc_code) = 3 then 'ATC 2nd'
-when length (atc_code) = 1 then 'ATC 1th'
-else null end,
-'C', atc_code, 
-TO_DATE('19700101', 'YYYYMMDD'),
-TO_DATE('20991231', 'YYYYMMDD'),
-null
-from atc_drugs_scraper;
-
+-- insert new relationships
 insert concept_relationship_stage 
 (concept_id_1,concept_id_2,concept_code_1,concept_code_2,vocabulary_id_1,vocabulary_id_2,relationship_id,valid_start_date,valid_end_date,invalid_reason)
 select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', current_date, TO_DATE('20991231', 'YYYYMMDD'),null
 from final_assembly f
 join concept c
 using (concept_id)
+where not exists( select 1 from concept_relationship_stage cr where cr.concept_code_1 = f.atc_code and cr.concept_code_2 = f.concept_code)
 ;
 
 
