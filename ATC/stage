@@ -16,7 +16,7 @@ where cr.relationship_id = 'ATC - RxNorm' and cr.invalid_reason is null and c2.c
 and not exists( select 1 from final_assembly f where f.atc_code = c.concept_code and f.concept_id = c2.concept_id)
 
 -- insert new relationships
-insert concept_relationship_stage 
+insert into concept_relationship_stage 
 (concept_id_1,concept_id_2,concept_code_1,concept_code_2,vocabulary_id_1,vocabulary_id_2,relationship_id,valid_start_date,valid_end_date,invalid_reason)
 select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', current_date, TO_DATE('20991231', 'YYYYMMDD'),null
 from final_assembly f
@@ -29,3 +29,36 @@ where not exists( select 1 from concept_relationship_stage cr where cr.concept_c
 select * from final_assembly
 where atc_name ~ ('combination|agents|drugs|supplements|antacid|antiinfectives|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics')
 ;
+
+--23. Remove direct links to RxNorm Ingredients for all those ATC5 concepts that are ambiguous and likely are either defined as combinations or with certain Drug Forms only
+ANALYZE concept_relationship_stage;
+DELETE
+FROM concept_relationship_stage crs
+WHERE EXISTS (
+		SELECT 1
+		FROM concept_stage c1,
+			concept c2,
+			concept_relationship_stage crs_int
+		WHERE c1.concept_code = crs_int.concept_code_1
+			AND c1.vocabulary_id = crs_int.vocabulary_id_1
+			AND c2.concept_code = crs_int.concept_code_2
+			AND c2.vocabulary_id = crs_int.vocabulary_id_2
+			AND c1.vocabulary_id = 'ATC'
+			AND c1.concept_class_id = 'ATC 5th'
+			AND c1.invalid_reason IS NULL
+			AND c2.vocabulary_id = 'RxNorm'
+			AND c2.concept_class_id = 'Ingredient'
+			AND crs_int.relationship_id = 'ATC - RxNorm'
+				)
+			AND crs_int.invalid_reason IS NULL
+			AND c1.concept_name ~ ('combination|agents|drugs|supplements|antacid|antiinfectives|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics')
+
+				)
+			AND crs_int.concept_code_1 = crs.concept_code_1
+			AND crs_int.vocabulary_id_1 = crs.vocabulary_id_1
+			AND crs_int.concept_code_2 = crs.concept_code_2
+			AND crs_int.vocabulary_id_2 = crs.vocabulary_id_2
+			AND crs_int.relationship_id = crs.relationship_id
+		);
+
+
