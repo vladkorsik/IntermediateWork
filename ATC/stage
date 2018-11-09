@@ -1,3 +1,12 @@
+-- for #21
+insert into concept_relationship_manual
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, current_date, TO_DATE('20991231', 'YYYYMMDD'), 'D'
+from concept_relationship cr
+join concept c on c.concept_id = cr.concept_id_1
+join concept c2 on c2.concept_id = cr.concept_id_2
+where cr.relationship_id = 'ATC - RxNorm name' and cr.invalid_reason is null;
+
+
 insert into concept_stage 
 (concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason)
 null, atc_name, 'Drug', 'ATC', 
