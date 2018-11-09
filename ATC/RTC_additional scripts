@@ -1,0 +1,51 @@
+
+insert into relationship_to_concept
+select distinct atc_name,'ATC',c2.concept_id,1,cast (null as int)
+from atc_drug_scraper -- no ingredients for some of the combinations  1898
+join concept c on atc_name = lower (c.concept_name) 
+join concept_relationship cr on cr.concept_id_1=c.concept_id and relationship_id in ('Source - RxNorm eq','Maps to')
+join concept c2 on c2.concept_id = concept_id_2 and c2.vocabulary_id like 'Rx%' and c2.concept_class_id = 'Ingredient' and c2.standard_concept = 'S'
+where atc_name not in 
+(select concept_code_1 from relationship_to_concept);
+
+create table ing_to_map as
+select distinct d.concept_name from drug_concept_stage d
+left join relationship_to_concept on concept_code = concept_code_1
+where concept_id_2 is null and 
+concept_class_id = 'Ingredient' -- and concept_name like '%other%'
+;
+--done to be inserted into RTC
+create table ing_to_map_1 as
+select distinct i.concept_name as atc_name, c2.*, 1 as precedence from ing_to_map i
+join concept c on i.concept_name = lower (c.concept_name) 
+join concept_relationship cr on cr.concept_id_1=c.concept_id and relationship_id in ('Source - RxNorm eq','Maps to')
+join concept c2 on c2.concept_id = concept_id_2 and c2.vocabulary_id like 'Rx%' and c2.concept_class_id = 'Ingredient' and c2.standard_concept = 'S';
+
+create table temp as
+select d.* from drug_concept_stage d
+left join relationship_to_concept on concept_code_1=concept_code 
+where concept_id_2 is null and concept_class_id = 'Ingredient'
+and concept_code not in
+(select atc_name from ing_to_map_1);
+
+insert into ing_to_map_1
+select t.concept_name, c.*, 1 from temp t
+join concept c on lower(t.concept_name) = lower(c.concept_name) and c.concept_class_id = 'Ingredient' and c.standard_concept='S';
+
+drop table temp;
+
+--process salts
+insert into ing_to_map_1
+select 'calcium', c.*, rank() over (partition by vocabulary_id order by concept_code desc) as precedence 
+from concept c where vocabulary_id='RxNorm' and concept_class_id = 'Ingredient' and standard_concept = 'S'
+and lower (concept_name) like 'calcium%';
+insert into ing_to_map_1
+select 'potassium', c.*, rank() over (partition by vocabulary_id order by concept_code desc) as precedence 
+from concept c where vocabulary_id='RxNorm' and concept_class_id = 'Ingredient' and standard_concept = 'S'
+and lower (concept_name) like 'potassium%';
+
+insert into relationship_to_concept (concept_code_1,vocabulary_id_1,concept_id_2,precedence) 
+select distinct atc_name,'ATC',concept_id,precedence
+from ing_to_map_1;
+
+delete from relationship_to_concept where concept_code_1 = 'multivitamins';
