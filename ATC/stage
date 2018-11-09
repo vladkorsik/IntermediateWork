@@ -1,6 +1,6 @@
 -- for #21
 insert into concept_relationship_manual
-select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, current_date, TO_DATE('20991231', 'YYYYMMDD'), 'D'
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,   TO_DATE('19700101', 'YYYYMMDD'), cuurent_date, 'D'
 from concept_relationship cr
 join concept c on c.concept_id = cr.concept_id_1
 join concept c2 on c2.concept_id = cr.concept_id_2
@@ -8,7 +8,7 @@ where cr.relationship_id = 'ATC - RxNorm name' and cr.invalid_reason is null;
 
 -- deprecate old ingredients
 insert into concept_relationship_manual
-select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, current_date, TO_DATE('20991231', 'YYYYMMDD'), 'D'
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,  TO_DATE('19700101', 'YYYYMMDD'), cuurent_date, 'D'
 from concept_relationship cr
 join concept c on c.concept_id = cr.concept_id_1
 join concept c2 on c2.concept_id = cr.concept_id_2
