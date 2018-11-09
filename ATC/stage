@@ -31,3 +31,6 @@ using (concept_id)
 ;
 
 
+select * from final_assembly
+where atc_name ~ ('combination|agents|drugs|supplements|antacid|antiinfectives|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics')
+;
