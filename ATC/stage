@@ -15,7 +15,7 @@ from atc_drugs_scraper;
 
 insert concept_relationship_stage 
 (concept_id_1,concept_id_2,concept_code_1,concept_code_2,vocabulary_id_1,vocabulary_id_2,relationship_id,valid_start_date,valid_end_date,invalid_reason)
-select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', TO_DATE('19990101', 'YYYYMMDD'), TO_DATE('20991231', 'YYYYMMDD'),null
+select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', current_date, TO_DATE('20991231', 'YYYYMMDD'),null
 from final_assembly f
 join concept c
 using (concept_id)
