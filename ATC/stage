@@ -1,6 +1,6 @@
 -- for #21
 insert into concept_relationship_manual
-select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,   TO_DATE('19700101', 'YYYYMMDD'), cuurent_date, 'D'
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, TO_DATE('19700101', 'YYYYMMDD'), current_date, 'D'
 from concept_relationship cr
 join concept c on c.concept_id = cr.concept_id_1
 join concept c2 on c2.concept_id = cr.concept_id_2
@@ -8,12 +8,13 @@ where cr.relationship_id = 'ATC - RxNorm name' and cr.invalid_reason is null;
 
 -- deprecate old ingredients
 insert into concept_relationship_manual
-select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,  TO_DATE('19700101', 'YYYYMMDD'), cuurent_date, 'D'
-from concept_relationship cr
-join concept c on c.concept_id = cr.concept_id_1
-join concept c2 on c2.concept_id = cr.concept_id_2
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,  TO_DATE('19700101', 'YYYYMMDD'), current_date, 'D'
+from concept_relationship_stage cr
+join concept_stage c on c.concept_code = cr.concept_code_1
+join concept c2 on c2.concept_code = cr.concept_code_2 and cr.vocabulary_id_2 = c2.vocabulary_id
 where cr.relationship_id = 'ATC - RxNorm' and cr.invalid_reason is null and c2.concept_class_id in ('Ingredient','Precise Ingredient')
-and not exists( select 1 from final_assembly f where f.atc_code = c.concept_code and f.concept_id = c2.concept_id)
+and not exists( select 1 from final_assembly f join concept cc on cc.concept_id = f.concept_id where f.atc_code = c.concept_code and cc.concept_code = c2.concept_code)
+;
 
 -- insert new relationships
 insert into concept_relationship_stage 
