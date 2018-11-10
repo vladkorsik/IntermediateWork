@@ -51,7 +51,11 @@ from atc_to_drug_6 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 join devv5.concept_ancestor on ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
+join drug_strength b on b.drug_concept_id = c.concept_id
 where descendant_concept_id not in (select concept_id from final_assembly)
+and not exists 
+	(select 1 from drug_strength d where d.drug_concept_id = b.drug_concept_id and d.ingredient_concept_id!=b.ingredient_concept_id) -- excluding combos
+)
 ;
 
 delete from final_assembly where atc_name like '%insulin%';
