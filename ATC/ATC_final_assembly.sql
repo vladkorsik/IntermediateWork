@@ -44,10 +44,10 @@ join devv5.concept_ancestor on ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
 join drug_strength d on d.drug_concept_id = c.concept_id
 where descendant_concept_id not in (select concept_id from final_assembly)
-and not exists 
+and not exists
 	(select 1 from concept c2 join devv5.concept_ancestor ca2
-	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient' 
-	 where ca2.descendant_concept_id = d.drug_concept_id and c.concept_id!=d.ingredient_concept_id) -- excluding combos
+	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient'
+	 where ca2.descendant_concept_id = d.drug_concept_id and c2.concept_id!=d.ingredient_concept_id) -- excluding combos
 ;
 
 insert into final_assembly
@@ -58,10 +58,10 @@ join devv5.concept_ancestor ca on ca.ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = ca.descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
 join drug_strength d on d.drug_concept_id = c.concept_id
 where descendant_concept_id not in (select concept_id from final_assembly)
-and not exists 
+and not exists
 	(select 1 from concept c2 join devv5.concept_ancestor ca2
-	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient' 
-	 where ca2.descendant_concept_id = d.drug_concept_id and c.concept_id!=d.ingredient_concept_id) -- excluding combos
+	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient'
+	 where ca2.descendant_concept_id = d.drug_concept_id and c2.concept_id!=d.ingredient_concept_id) -- excluding combos
 ;
 
 delete from final_assembly where atc_name like '%insulin%';
@@ -70,7 +70,13 @@ select distinct s.*, c.concept_id, c.concept_name, c.concept_code, c.concept_cla
 from atc_to_drug_manual m
 join atc_drugs_scraper s using (atc_code)
 join devv5.concept_ancestor ca on ca.ancestor_concept_id = m.concept_id
-join concept c on c.concept_id = ca.descendant_concept_id;
+join concept c on c.concept_id = ca.descendant_concept_id
+join drug_strength d on d.drug_concept_id = c.concept_id
+where not exists
+	(select 1 from concept c2 join devv5.concept_ancestor ca2
+	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient'
+	 where ca2.descendant_concept_id = d.drug_concept_id and c2.concept_id!=d.ingredient_concept_id) -- excluding combos
+;
 
 delete from  final_assembly
 where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
