@@ -3,24 +3,35 @@ Prerequisites:
 get atc_drug_scraper using atc-grabber
 ************************************/
 
--- figure out how it happened
+drop table atc_1;
+create table atc_1 as
+select * from atc_drug_scraper
+where length (atc_code) = 7;
 
- delete from  dev_combo_stage where flag = 'with'  and atc_code like 'N02%';
+-- table with dosages
+create table atc_1_dos
+as 
+select * from atc_1
+where ddd is not null;
 
-delete from dev_combo_stage where
-  atc_code in ('C07CB02','C07CB03','C07CB53') and ing in ('Hydrochlorothiazide','Hydralazine');
-  
-  
-select * from dev_combo_stage;
-insert into dev_combo_stage
-select distinct a.atc_code,  a.atc_name, null, concept_code_2 = 'with'
-from excl a
-  join reference r on regexp_replace(a.atc_code,'.$','') = regexp_replace(r.atc_code,'.$','') and a.atc_code like 'N02%'
-join internal_relationship_stage i on i.concept_code_1 = r.concept_code
-join drug_concept_stage d on d.concept_code = concept_code_2 and concept_class_id = 'Ingredient';
+--table with combos
+drop table atc_1_comb;
+create table atc_1_comb
+as
+select * from atc_1
+where atc_name ~ 'comb| and |diphtheria-|meningococcus|excl|derivate|other|with'
+and not atc_name ~ 'decarboxylase inhibitor';
+
+delete from atc_1
+where atc_code in
+(select atc_code from atc_1_comb);
+
+/***  no mapping in one of the combos, exclude from mappings ***/
+--!!!remove, put in QA
+delete from atc_1_comb where atc_name ~ 'arterolane|betamipron|chloroprednisone|epitizide|methylnortestosterone|panipenem|picodralazine|pyronaridine|syrosingopine|trimegestone|tropenzilone';
 
 
-
+-- watch for A01 - stomatological
 -- additionally need to map
 create table manual as
 select * from atc_1_comb where atc_name like 'meningo%';
@@ -49,90 +60,277 @@ create table ds_stage_1
 as select * from ds_stage;
 create table relationship_to_concept_1
 as select * from relationship_to_concept;
+create table dev_ingredient_stage_1
+as select * from dev_ingredient_stage;
 
 
--- creating reference table with atc_code and corresonding code+form
-create table reference as
-select atc_code,concept_code 
-from drug_concept_stage 
-join atc_drugs_scraper on substring (concept_name,'\w+') = atc_code
-;
-
-drop table atc_1;
-create table atc_1 as
-select * from atc_drugs_scraper
-where length (atc_code) = 7;
-
--- table with dosages
-create table atc_1_dos
-as 
-select * from atc_1
-where ddd is not null;
-
---table with combos
-drop table atc_1_comb;
-create table atc_1_comb
-as
-select * from atc_1
-where atc_name ~ 'comb| and |diphtheria-|meningococcus|excl|derivate|other|with'
-and not atc_name ~ 'decarboxylase inhibitor';
-
-delete from atc_1
-where atc_code in
-(select atc_code from atc_1_comb);
+--fix the data shift from the website
+update atc_drugs_scraper
+set ddd = 60, u = 'mg',adm_r = 'O'
+where atc_code = 'B01AF03';
 
 -- updating source data: forms
 UPDATE atc_1_comb
 SET atc_name = 'progestogen and estrogen',
     adm_r = 'V'
 WHERE atc_code = 'G02BB01';
+
+
+--medicated shampoos
+--('D11AC01','D11AC02','D11AC03','D11AC06','D11AC08','D11AC09','D11AC30')
+
+
+ -- add buccal and others
+ -- not included: lamella
+drop table if exists forms ;
+create table forms as
+(
+select concept_name as form, 'inhal' as label
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Inhal%' and concept_name not like '%Nasal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'oph' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Ophthal%' and vocabulary_id like '%RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'p' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Oral|Inject|Cartridge|Syringe|Intra|Implant' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 's' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Oral|Inject|Cartridge|Syringe|Intra|Oral|Implant' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'o' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Oral|Chewab%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'dressing' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Medicated Pad' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'td' as flag
+from concept
+where concept_class_id = 'Dose Form' and (concept_name like 'Transdermal%' or concept_name = 'Topical gel') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    
+union all
+    
+select concept_name, 'td patch' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Transdermal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    --TD
+    --TD patch
+    
+select concept_name, 'i' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Irrigation Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 't' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Topical%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'ot' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Otic%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'e' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Enema','Rectal Suspension','Rectal Solution') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'v' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Vaginal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'r' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Rectal|Enema' and vocabulary_id like 'RxNorm%' and invalid_reason is null  
+    
+union all    
+
+select concept_name, 'n' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Nasal%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'sl' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'chewing gum' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'chewing gum' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'implant' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Drug Implant' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'intravesical' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Irrigation Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'ointment' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name ~ 'Cream|Ointment' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+    
+union all
+    
+select concept_name, 'oral aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like 'Oral Spray' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 's.c. implant' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Drug Implant') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'inh.aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name like '%Sublingual%' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+  
+union all
+    
+select concept_name, 'inhal. powder' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Inhalant Powder','Metered Dose Inhaler','Dry Powder Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.aerosol' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Nasal Inhaler','Metered Dose Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.powder' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Inhalant Powder','Metered Dose Inhaler','Dry Powder Inhaler') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+    
+union all
+    
+select concept_name, 'inhal.solution' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name = 'Inhalant Solution' and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+union all
+    
+select concept_name, 'instill.sol.' as flag
+from concept
+where concept_class_id = 'Dose Form' and concept_name in ('Topical Solution','Irrigation Solution') and vocabulary_id like 'RxNorm%' and invalid_reason is null
+
+);
+
+insert into forms 
+select distinct c2.concept_name, 'th'
+from concept c 
+join concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null and cr.relationship_id = 'ATC - RxNorm'
+join concept_relationship cr2 on cr.concept_id_2 = cr2.concept_id_1 and cr2.invalid_reason is null and cr2.relationship_id = 'RxNorm has dose form'
+join concept c2 on cr2.concept_id_2 = c2.concept_id and c2.vocabulary_id = 'RxNorm' 
+where c.concept_code like 'R02%' and c.vocabulary_id = 'ATC'
+and c2.concept_name not like 'Topical%' -- Exclude Topical route from throat preparation
+
+union all
+
+select distinct c2.concept_name, 'lo' --local oral
+from concept c 
+join concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null and cr.relationship_id = 'ATC - RxNorm'
+join concept_relationship cr2 on cr.concept_id_2 = cr2.concept_id_1  and cr2.relationship_id = 'RxNorm has dose form'
+join concept c2 on cr2.concept_id_2 = c2.concept_id and c2.vocabulary_id = 'RxNorm' 
+where c.concept_code like 'A01A%' and c.vocabulary_id = 'ATC'
+;
+
+-- creating reference table with atc_code and corresonding code+form
+create table reference as
+select atc_code, 
+case when form is not null then atc_code||' '||form else atc_code end as concept_code
+from atc_drugs_scraper
+left join forms on lower(label) = lower(adm_r);
+
 insert into reference
 values ('G02BB01','G02BB01 Vaginal Ring');
 
-/***  no mapping in one of the combos, exclude from mappings ***/
---!!!remove, put in QA
-delete from atc_1_comb where atc_name ~ 'arterolane|betamipron|chloroprednisone|epitizide|methylnortestosterone|panipenem|picodralazine|pyronaridine|syrosingopine|trimegestone|tropenzilone';
+--TD note case when !!!
+--gel!!!
 
--- ingredients
---missing ones
-insert into drug_concept_stage
-select distinct concept_code_2, 'ATC','Ingredient','S',concept_code_2, null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null 
-from internal_relationship_stage
-where concept_code_2 not in
-(select concept_code from drug_concept_stage);
 
+/******DRUG_CONCEPT_STAGE******/
+
+-- 1. Drugs
+insert into drug_concept_stage (CONCEPT_NAME,VOCABULARY_ID,CONCEPT_CLASS_ID,STANDARD_CONCEPT,CONCEPT_CODE,POSSIBLE_EXCIPIENT,DOMAIN_ID,VALID_START_DATE,VALID_END_DATE,INVALID_REASON,SOURCE_CONCEPT_CLASS_ID)
+select atc_name, 'ATC', 'Drug Product', 'S', coalesce(concept_code,atc_code) , null, 'Drug' , to_date ('YYYYMMDD','19700101'),to_date ('YYYYMMDD','20991231'), null, null
+from reference
+;
+-- 2. Dose Forms
+insert into drug_concept_stage (CONCEPT_NAME,VOCABULARY_ID,CONCEPT_CLASS_ID,STANDARD_CONCEPT,CONCEPT_CODE,POSSIBLE_EXCIPIENT,DOMAIN_ID,VALID_START_DATE,VALID_END_DATE,INVALID_REASON,SOURCE_CONCEPT_CLASS_ID)
+select concept_name, 'ATC', 'Dose Form', null, concept_name , null, 'Drug' , to_date ('YYYYMMDD','19700101'),to_date ('YYYYMMDD','20991231'), null, null
+from concept 
+where vocabulary_id like 'RxNorm%' and invalid_reason is null and concept_class_id = 'Dose Form'
+;
+
+-- 3. Ingredients
 --non-combo
 insert into drug_concept_stage
 select distinct atc_name, 'ATC','Ingredient','S',atc_name, null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null
 from atc_1
-where atc_name not in
-(select concept_name from drug_concept_stage);
-
---insert ingredients from non_combo drugs
-insert into internal_relationship_stage
-select distinct concept_code,atc_name from atc_1
-join reference r using (atc_code)  
-where r.concept_code not in 
-(select concept_code_1 from internal_relationship_stage
-join drug_concept_stage on concept_code_2=concept_code and concept_class_id='Ingredient');
+;
 
 --inserting combos
 insert into drug_concept_stage
 select distinct trim(unnest(string_to_array(atc_name, ' and '))), 'ATC','Ingredient','S',trim(unnest(string_to_array(atc_name, ' and '))), null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null
-  from 
-  atc_1_comb where atc_name not like '%,%' and atc_name not like '%comb%' and atc_name not like '%other%' and atc_name like '% and %'
-  and atc_name not in ('omega-3-triglycerides incl. other esters and acids') -- process separately
-  and trim(unnest(string_to_array(atc_name, ' and '))) not in
-  (select concept_name from drug_concept_stage)
+from 
+atc_1_comb where atc_name not like '%,%' and atc_name not like '%comb%' and atc_name not like '%other%' and atc_name like '% and %'
+and atc_name not in ('omega-3-triglycerides incl. other esters and acids') -- process separately
+and trim(unnest(string_to_array(atc_name, ' and '))) not in
+(select concept_name from drug_concept_stage)
 ;
-
-insert into internal_relationship_stage
-select distinct coalesce (concept_code,atc_code), trim(unnest(string_to_array(atc_name, ' and ')))
- from 
-  atc_1_comb 
-  left join reference using (atc_code)
-  where atc_name not like '%,%' and atc_name not like '%comb%' and atc_name not like '%other%'  and atc_name like '% and %'
-  and atc_name not in ('omega-3-triglycerides incl. other esters and acids');
 
 --comb
 insert into drug_concept_stage
@@ -144,6 +342,45 @@ and regexp_replace (atc_name,'((, incl\.)?(,)? combinations)| in combination( wi
 and  regexp_replace (atc_name,'((, incl\.)?(,)? combinations)| in combination( with other drugs)?','')  not in
 (select concept_code from drug_concept_stage)
 ;
+
+--quinupristin/dalfopristin
+insert into drug_concept_stage
+select 'quinupristin', 'ATC','Ingredient','S','quinupristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
+insert into drug_concept_stage
+select 'dalfopristin', 'ATC','Ingredient','S', 'dalfopristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
+
+
+/*insert into internal_relationship_stage (concept_code_1, concept_code_2)
+with primary_table as (select * from atc_drugs_scraper
+where length(atc_code) = 7
+and atc_name like '%and %')
+select atc_code||' '||concept_name, atc_code||'-'||split_part(atc_name, 'and ', 2) from primary_table, dev_oral
+where atc_name not like '%,%'
+and atc_name not like '%combination%'
+and adm_r = 'O'
+*/
+
+
+
+/****IRS****/
+
+-- Ingredient
+--insert ingredients from non_combo drugs
+insert into internal_relationship_stage
+select distinct concept_code,atc_name from atc_1
+join reference r using (atc_code)  
+where r.concept_code not in 
+(select concept_code_1 from internal_relationship_stage
+join drug_concept_stage on concept_code_2=concept_code and concept_class_id='Ingredient');
+
+insert into internal_relationship_stage
+select distinct coalesce (concept_code,atc_code), trim(unnest(string_to_array(atc_name, ' and ')))
+from 
+atc_1_comb 
+left join reference using (atc_code)
+where atc_name not like '%,%' and atc_name not like '%comb%' and atc_name not like '%other%'  and atc_name like '% and %'
+and atc_name not in ('omega-3-triglycerides incl. other esters and acids');
+
 insert into internal_relationship_stage
 select coalesce (concept_code,atc_code), regexp_replace (atc_name,'((, incl\.)?(,)? combinations)| in combination( with other drugs)?','')
 from atc_1_comb
@@ -153,58 +390,7 @@ and not atc_name ~ 'excl|combinations of|derivate|other|with'
 and regexp_replace (atc_name,'((, incl\.)?(,)? combinations)| in combination( with other drugs)?','')   not in ('various','combinations') -- exclude from search
 and coalesce (concept_code,atc_code) not in (select concept_code_1 from internal_relationship_stage join drug_concept_stage on concept_code_2 = concept_code and concept_class_id = 'Ingredient') ;
 
---mappings
-insert into relationship_to_concept
-select distinct atc_name,'ATC',c2.concept_id,1,cast (null as int)
-from atc_drugs_scraper -- no ingredients for some of the combinations  1898
-join concept c on atc_name = lower (c.concept_name) 
-join concept_relationship cr on cr.concept_id_1=c.concept_id and relationship_id in ('Source - RxNorm eq','Maps to')
-join concept c2 on c2.concept_id = concept_id_2 and c2.vocabulary_id like 'Rx%' and c2.concept_class_id = 'Ingredient' and c2.standard_concept = 'S'
-where atc_name not in 
-(select concept_code_1 from relationship_to_concept);
-
-create table ing_to_map as
-select distinct d.concept_name from drug_concept_stage d
-left join relationship_to_concept on concept_code = concept_code_1
-where concept_id_2 is null and 
-concept_class_id = 'Ingredient' -- and concept_name like '%other%'
-;
---done to be inserted into RTC
-create table ing_to_map_1 as
-select distinct i.concept_name as atc_name, c2.*, 1 as precedence from ing_to_map i
-join concept c on i.concept_name = lower (c.concept_name) 
-join concept_relationship cr on cr.concept_id_1=c.concept_id and relationship_id in ('Source - RxNorm eq','Maps to')
-join concept c2 on c2.concept_id = concept_id_2 and c2.vocabulary_id like 'Rx%' and c2.concept_class_id = 'Ingredient' and c2.standard_concept = 'S';
-
-create table temp as
-select d.* from drug_concept_stage d
-left join relationship_to_concept on concept_code_1=concept_code 
-where concept_id_2 is null and concept_class_id = 'Ingredient'
-and concept_code not in
-(select atc_name from ing_to_map_1);
-
-insert into ing_to_map_1
-select t.concept_name, c.*, 1 from temp t
-join concept c on lower(t.concept_name) = lower(c.concept_name) and c.concept_class_id = 'Ingredient' and c.standard_concept='S';
-
-drop table temp;
-
---process salts
-insert into ing_to_map_1
-select 'calcium', c.*, rank() over (partition by vocabulary_id order by concept_code desc) as precedence 
-from concept c where vocabulary_id='RxNorm' and concept_class_id = 'Ingredient' and standard_concept = 'S'
-and lower (concept_name) like 'calcium%';
-insert into ing_to_map_1
-select 'potassium', c.*, rank() over (partition by vocabulary_id order by concept_code desc) as precedence 
-from concept c where vocabulary_id='RxNorm' and concept_class_id = 'Ingredient' and standard_concept = 'S'
-and lower (concept_name) like 'potassium%';
-
-insert into relationship_to_concept (concept_code_1,vocabulary_id_1,concept_id_2,precedence) 
-select distinct atc_name,'ATC',concept_id,precedence
-from ing_to_map_1;
-
-delete from relationship_to_concept where concept_code_1 = 'multivitamins';
-
+-- manual
 --quinupristin/dalfopristin
 insert into internal_relationship_stage
 select concept_code_1,'quinupristin' from internal_relationship_stage where concept_code_2='quinupristin/dalfopristin';
@@ -212,64 +398,28 @@ insert into internal_relationship_stage
 select concept_code_1,'dalfopristin' from internal_relationship_stage where concept_code_2='quinupristin/dalfopristin';
 delete from internal_relationship_stage where concept_code_2='quinupristin/dalfopristin';
 
-insert into drug_concept_stage
-select 'quinupristin', 'ATC','Ingredient','S','quinupristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
-insert into drug_concept_stage
-select 'dalfopristin', 'ATC','Ingredient','S', 'dalfopristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
---missing forms
-
--- insert ophtalmic solution for artificial tears	
---need for DF pick up
-insert into reference
-values ('S01XA20','S01XA20');
+-- Dose Forms
 insert into internal_relationship_stage
-values ('S01XA20','Ophtalmic Solution');
+select concept_code, regexp_replace(concept_code,'\w+ ','')
+from reference;
 
---immunocyanin
-insert into reference 
-values ('L03AX10','L03AX10 Injectable Solution');
-insert into drug_concept_stage
-values ('L03AX10 Injectable Solution','ATC','Drug Product',null,'L03AX10 Injectable Solution', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null);
-insert into internal_relationship_stage 
-values ('L03AX10 Injectable Solution','Injectable Solution');
 
---natural phospholipids
-insert into reference 
-values ('R07AA02','R07AA02 Injectable Solution');
-insert into drug_concept_stage
-values ('R07AA02 Injectable Solution','ATC','Drug Product',null,'R07AA02 Injectable Solution', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null);
-insert into internal_relationship_stage 
-values ('R07AA02 Injectable Solution','Injectable Solution');
-
---rimiterol
-insert into reference 
-values ('R03AC05','R03AC05 Inhalant Powder');
-insert into reference 
-values ('R03AC05','R03AC05 Inhalant Solution');
-insert into reference 
-values ('R03AC05','R03AC05 Metered Dose Inhaler');
-insert into drug_concept_stage
-values ('R03AC05 Inhalant Powder','ATC','Drug Product',null,'R03AC05 Inhalant Powder', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null);
-insert into drug_concept_stage
-values ('R03AC05 Metered Dose Inhaler','ATC','Drug Product',null,'R03AC05 Metered Dose Inhaler', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null);
-insert into drug_concept_stage
-values ('R03AC05 Inhalant Solution','ATC','Drug Product',null,'R03AC05 Inhalant Solution', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null);
-insert into internal_relationship_stage 
-values ('R03AC05 Inhalant Powder','Inhalant Powder');
-insert into internal_relationship_stage 
-values ('R03AC05 Inhalant Solution','Inhalant Solution');
-insert into internal_relationship_stage 
-values ('R03AC05 Metered Dose Inhaler','Metered Dose Inhaler');
-
+--missing forms
 -- create intermediate tables with forms identified based on parent ATC codes
 drop table systemic;
 create table systemic as
 select atc_code from reference where concept_code ~ 'R03C|A14|D10B|D01B|R06|D05B|H02|G03A|R03D|^H|^J'
-and atc_code=concept_code;
+and atc_code=concept_code
+and atc_code not like 'S02%' and atc_code not like 'D04%';
+
+drop table rectal;
+create table rectal as
+select atc_code from reference where concept_code ~'C05A'
+and atc_code = concept_code;
 
 drop table nasal;
 create table nasal as
-select atc_code from reference where concept_code  ~ 'R01AD01|R01AD12|R01AX03|R01AX02'
+select atc_code from reference where concept_code  ~ 'R01' and not concept_code  ~ '^R01B'
 and atc_code=concept_code;
 
 drop table irrig;
@@ -279,22 +429,28 @@ and atc_code=concept_code;
 
 drop table inhal;
 create table inhal as
-select atc_code from reference where concept_code  ~ 'R03B'
+select atc_code from reference where concept_code  ~ 'R03B|R03AC05'--rimiterol
+and atc_code=concept_code;
+
+drop table dressing;
+create table dressing as
+select atc_code from reference where concept_code  ~ '^D09'
 and atc_code=concept_code;
 
 drop table oral;
 create table oral as
-select atc_code from reference where concept_code  ~ 'A07|V04CA02|A06AD|R01B'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
-and atc_code=concept_code;
+select atc_code from reference where concept_code  ~ 'A07|R01B|V04CA02|A06AD'-- V04CA02 oral glucose tolerance test; A06AD - oral laxatives
+and atc_code=concept_code
+and atc_code not like 'S02%';
 
 drop table parent;
 create table parent as
-select atc_code from reference where concept_code  ~ 'B05A|B05Z|B05X|B05D|B05B'
+select atc_code from reference where concept_code  ~ 'B05A|B05Z|B05X|B05D|B05B|R07AA02|L03AX10'--natural phospholipids, immunocyanin
 and atc_code=concept_code;
 
 drop table ophth;
 create table ophth as
-select atc_code from reference where concept_code  ~ 'S03|S01|S01X'
+select atc_code from reference where concept_code  ~ 'S03|S01|S01X|S01XA20'
 and atc_code=concept_code;
 
 drop table otic;
@@ -304,7 +460,7 @@ and atc_code=concept_code;
  
 drop table topical;
 create table topical as
-select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|C05A|R01AA14|B02BC|N01B|^D'
+select atc_code from reference where concept_code  ~ 'M02|R01A|D05A|D06B|G02B|D01A|D10A|R01AA14|B02BC|N01B|C05BA|^D'
 and atc_code=concept_code;
 
 drop table throat;
@@ -319,7 +475,7 @@ and atc_code=concept_code;
 
 drop table vaginal;
 create table vaginal as
-select atc_code from reference where concept_code  like 'G02CC%'
+select atc_code from reference where concept_code ~ 'G02CC|G01A'
 and atc_code=concept_code;
 
 drop table localoral;
@@ -366,6 +522,11 @@ where concept_code_1 in
 (select atc_code, 's' as label from systemic) s
 join forms using (label)) ;
 
+
+/** RTC ***/
+
+
+
 -- started processing groups using ATC/SNOMED/NDFRT with manual exclusions
 
 insert into dev_ingredient_stage (source_concept_name,source_vocabulary_id,source_concept_class_id,source_concept_code)
@@ -375,21 +536,23 @@ where concept_id_2 is null and concept_class_id = 'Ingredient'
 and concept_name not in
 (select source_concept_name from dev_ingredient_stage)
 ;
-INSERT INTO dev_ingredient_stage(  source_concept_name,  source_vocabulary_id,  source_concept_class_id,  source_concept_code,  maps_to,  concept_id,  concept_name,  vocabulary_id)VALUES(  'quinupristin',  'ATC',  'Ingredient',  'quinupristin',  NULL,  1789515,  NULL,  NULL);
-INSERT INTO dev_ingredient_stage(  source_concept_name,  source_vocabulary_id,  source_concept_class_id,  source_concept_code,  maps_to,  concept_id,  concept_name,  vocabulary_id)VALUES(  'dalfopristin',  'ATC',  'Ingredient',  'dalfopristin',  NULL,  1789517,  NULL,  NULL);
+INSERT INTO dev_ingredient_stage(  source_concept_name,  source_vocabulary_id,  source_concept_class_id,  source_concept_code,  maps_to,  concept_id,  concept_name,  vocabulary_id)
+VALUES(  'quinupristin',  'ATC',  'Ingredient',  'quinupristin',  NULL,  1789515,  NULL,  NULL);
+INSERT INTO dev_ingredient_stage(  source_concept_name,  source_vocabulary_id,  source_concept_class_id,  source_concept_code,  maps_to,  concept_id,  concept_name,  vocabulary_id)
+VALUES(  'dalfopristin',  'ATC',  'Ingredient',  'dalfopristin',  NULL,  1789517,  NULL,  NULL);
 
 insert into dev_ingredient_stage
 SELECT distinct  'antibiotics','ATC','Ingredient','antibiotics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
-  AND ancestor_concept_id IN (21600602, 21601616, 21601910, 21602055, 21603073, 21603095, 21603235, 21603553) 
-  AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' 
+  AND ancestor_concept_id IN ( 40182597,40194036,21602796,21600602,21601616,21601910,21602055,21603073,21603095,21603235,21603553 ) 
+  AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,40166605)
 ;
 delete from dev_ingredient_stage where source_concept_name='antibiotics' and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'antiseptics','ATC','Ingredient','antiseptics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4337018,40218829,21603217) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,40166605)
@@ -438,7 +601,7 @@ delete from dev_ingredient_stage where source_concept_name='expectorants' and co
 
 insert into dev_ingredient_stage
 SELECT distinct  'thiazides','ATC','Ingredient','thiazides',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor 
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4251718) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -447,7 +610,7 @@ delete from dev_ingredient_stage where source_concept_name='thiazides' and conce
 
 insert into dev_ingredient_stage
 SELECT distinct  'cannabinoids','ATC','Ingredient','cannabinoids',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor 
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (4327210) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -456,7 +619,7 @@ delete from dev_ingredient_stage where source_concept_name='cannabinoids' and co
 
 insert into dev_ingredient_stage
 SELECT distinct  'potassium-sparing agents','ATC','Ingredient','potassium-sparing agents',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (21601532) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -465,7 +628,7 @@ delete from dev_ingredient_stage where source_concept_name='potassium-sparing ag
 
 insert into dev_ingredient_stage
 SELECT distinct  'mydriatics','ATC','Ingredient','mydriatics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor 
+FROM devv5.concept_ancestor  -- antibiotic agents
   JOIN concept c ON descendant_concept_id = c.concept_id
   AND ancestor_concept_id IN (21605059) 
   AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (1326378,19049105)
@@ -491,8 +654,7 @@ where source_concept_name='acid preparations'
 and concept_id is null;
 
 insert into dev_ingredient_stage
-SELECT distinct  'amino acids','ATC','Ingredient','amino acids',null, concept_id,concept_name,vocabulary_id	
-FROM devv5.concept_ancestor  
+SELECT distinct  'amino acids','ATC','Ingredient','amino acids',null, concept_id,concept_name,vocabulary_id	FROM devv5.concept_ancestor  -- antibiotic agents
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21601215, 21601034)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' ;
@@ -503,7 +665,7 @@ and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'analgesics','ATC','Ingredient','analgesics',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  
+FROM devv5.concept_ancestor  -- antibiotic agents
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21604253)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient'
@@ -650,7 +812,7 @@ FROM devv5.concept_ancestor  s
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (21604489)
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient'
-;
+and concept_id not in (742594);
 
 delete from dev_ingredient_stage
 where source_concept_name='psycholeptics'
@@ -691,7 +853,7 @@ and concept_id is null;
 
 insert into dev_ingredient_stage
 SELECT distinct  'antiinfectives','ATC','Ingredient','antiinfectives',null, concept_id,concept_name,vocabulary_id
-FROM devv5.concept_ancestor  
+FROM devv5.concept_ancestor  -- antibiotic agents
 JOIN concept c ON descendant_concept_id = c.concept_id
 AND ancestor_concept_id IN (40177425) 
 AND vocabulary_id like 'RxNorm%' and concept_class_id = 'Ingredient' and concept_id not in (42800027,19010309,906914,967823,19077884,901656,40166605,19111620,1563600,917006,1552310,923540,975125,19089810,919681)
@@ -704,7 +866,6 @@ from dev_ingredient_stage
 where concept_id is not null and (source_concept_name,concept_id) not in (select concept_code_1,concept_id_2 from relationship_to_concept) ;
 
 -- COMBINATIONS EXCL. \\ WITH
-
 create table dev_combo_stage as (
 with primary_table as (
 select *, split_part(atc_name, ',', 1) as ing from atc_1_comb
@@ -890,142 +1051,3 @@ select 'C02LA71', 'reserpine and diuretics, combinations with psycholeptics',con
  from dev_ingredient_stage where 
 source_concept_name in ('diuretics');
 
-
-
-
--- fixing original bugs
-delete from drug_concept_stage where concept_code in (
-select concept_code from
-(select * from atc_drugs_scraper where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'TD'))
-	a join reference using (atc_code) where concept_code like '%Topical%');
-
-delete from internal_relationship_stage where concept_code_1 in (
-select concept_code from
-(select * from atc_drugs_scraper where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'TD'))
-	a join reference using (atc_code) where concept_code like '%Topical%');
-
-delete from reference where concept_code in (
-select concept_code from
-(select * from atc_drugs_scraper where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'TD'))
-	a join reference using (atc_code) where concept_code like '%Topical%');
-delete from drug_concept_stage where concept_code in (
-select concept_code from
-(select * from atc_drugs_scraper d1 where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'SL') and not exists (select 1 from atc_drugs_scraper d
-where d.atc_code = d1.atc_code and d.adm_r='O' ) )
-	a join reference using (atc_code) where concept_code ~ 'Buccal')
-
-;-
-delete from internal_relationship_stage where concept_code_1 in (
-select concept_code from
-(select * from atc_drugs_scraper d1 where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'SL') and not exists (select 1 from atc_drugs_scraper d
-where d.atc_code = d1.atc_code and d.adm_r='O' ) )
-	a join reference using (atc_code) where concept_code ~ 'Buccal')
-
-;
-delete from reference where concept_code in (
-select concept_code from
-(select * from atc_drugs_scraper d1 where atc_code in (select atc_code from atc_drugs_scraper where adm_r = 'SL') and not exists (select 1 from atc_drugs_scraper d
-where d.atc_code = d1.atc_code and d.adm_r='O' ) )
-	a join reference using (atc_code) where concept_code ~ 'Buccal')
-
---wrongly mapped
---nemustine
-delete from relationship_to_concept where concept_code_1='nimustine';
---gadotheric acid
-delete from relationship_to_concept where concept_code_1='nimustine' and concept_id_2 = 19097463;
-select * from relationship_to_concept where concept_code_1='gadoteric acid';
-select * from reference where atc_Code = 'S01XA14' -- ophtalmical
-;
-
-delete from internal_relationship_stage where concept_code_1 in (
-select concept_code from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
-and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew');
-
-delete from drug_concept_stage  where concept_code in (
-select concept_code from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
-and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew');
-
-delete from reference where atc_code like 'R01%' and atc_code not like 'R01B%'
-and concept_code ~ 'Topical|Oral|Inject|Syringe|Cartr|Chew'
-
-
-delete from relationship_to_concept
-where concept_code_1 ='dexibuprofen' and concept_id_2 = 1177480;
-delete from relationship_to_concept
-where concept_code_1 ='sultamicillin' and concept_id_2 = 1717327;
-UPDATE relationship_to_concept
-   SET concept_id_2 = 1383815
-WHERE concept_code_1 = 'isosorbide mononitrate' AND   concept_id_2 = 1383925;
-UPDATE relationship_to_concept
-   SET concept_id_2 = 19049816
-WHERE concept_code_1 = 'choline theophyllinate';
-delete from relationship_to_concept
-where concept_code_1 ='bufylline' and concept_id_2 = 1237049;
-
-
-/** manual work **/
-atc_to_drug_manual
---splitting names for vaccines
-create table manual_split AS
-with duplicate_meningococci as (
-SELECT id, atc_code, atc_name, regexp_replace (atc_name, ',(?=C)|,(?=Y)|,(?=W)|\s\+\s(?=C)', ' and meningococcus ', 'g') as atc_name2
-FROM dev_atc.manual
-WHERE atc_name  ilike '%men%'
-
-UNION ALL
-
-SELECT id, atc_code, atc_name, atc_name as atc_name2
-FROM dev_atc.manual
-WHERE atc_name not ilike '%men%' AND atc_name not in ('sodium chloride, hypertonic') AND atc_name not ilike '%levodopa%'
-),
-
-split_names as (
-SELECT id, atc_code, atc_name, regexp_split_to_table (atc_name2, '-(?!135)|[[:blank:]]and[[:blank:]](?!toxoids)|,[[:blank:]]combinations[[:blank:]]with[[:blank:]](?!toxoids)|(?<=mumps),\s(?=rubella)') as atc_name3
-FROM duplicate_meningococci
-),
-
-clean_names as (
-SELECT id, atc_code, atc_name, atc_name3, regexp_replace (atc_name3, ',|(?<=typhoid)(\s)*vaccine(,)*\s*|(\s)*bivalent(,)*\s*|(\s)*tetravalent(,)*\s*|(\s)*combinations(,)*\s*|(\s)*with(,)*\s*|(\s)*and(,)*\s*|(\s)*whole(,)*\s*|(?<!vari)(\s)*cell(,)*\s*|(\s)*attenuated(,)*\s*|(\s)*purified(,)*\s*|(\s)*polysaccharide(s)*(,)*\s*|(\s)*antigen(s)*(,)*\s*|(\s)*conjugated(,)*\s*|(\s)*inactivated(,)*\s*|(\s)*live(,)*\s*|(?<!tetanus(\s)*|diphtheria(\s)*)(\s)*toxoid(s*)(,)*\s*', '', 'g') as atc_name4
-FROM split_names
-),
-
-charact as (
-SELECT id, atc_code, atc_name, atc_name3, regexp_matches (atc_name3, 'purified\spolysaccharide\santigen|live\sattenuated|combinations\swith\stoxoids|purified\santigen\,\scombinations\swith\stoxoids|inactivated\,\swhole cell\,\scombinations\swith\stoxoids|vaccine\,\sinactivated\,\swhole\scell|inactivated\,\swhole\scell|purified\santigen|attenuated|purified\s*polysaccharides\santigen\sconjugated|purified\s*polysaccharides\santigen|polysaccharide|antigen|vesicular|conjugated|live|(?<!pertussis\sand\s)toxoids', 'g') as charact
-FROM split_names
-),
-
-split as (
-
-SELECT DISTINCT cn.atc_code, cn.atc_name, cn.atc_name3, cn.atc_name4, c.charact
-FROM clean_names cn
-LEFT JOIN charact c
-  ON cn.atc_code = c.atc_code AND cn.atc_name3 = c.atc_name3
-  ORDER BY cn.atc_code, cn.atc_name
-),
-
-charact2 as (
-SELECT atc_code, atc_name, atc_name3, atc_name4, regexp_replace (unnest(charact), ',|\s((?=\s))', '', 'g') as charact
-FROM split
-),
-
-final as (
-SELECT s.atc_code,s.atc_name, s.atc_name3, s.atc_name4, c2.charact 
-FROM split s
-LEFT JOIN charact2 c2
-  ON s.atc_code = c2.atc_code
-),
-
-final2 as(
-
-SELECT atc_code, atc_name, atc_name4 || ' ' || charact as ingredient_name
-FROM final
-WHERE charact is not null
-
-UNION ALL
-
-SELECT atc_code, atc_name, atc_name4 as ingredient_name
-FROM final
-WHERE charact is null
-ORDER BY atc_code
-)
-SELECT * from final2;
