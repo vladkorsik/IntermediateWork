@@ -1,0 +1,110 @@
+J06AA02,tetanus antitoxin,tetanus antitoxin
+J06BB02,tetanus immunoglobulin,tetanus immunoglobulin
+J06BB06,rubella immunoglobulin,rubella immunoglobulin
+J06BB13,pertussis immunoglobulin,pertussis immunoglobulin
+J06BB15,mumps immunoglobulin,mumps immunoglobulin
+J07AE51,"cholera, combinations with typhoid vaccine, inactivated, whole cell",typhoid vaccine inactivated whole cell
+J07AE51,"cholera, combinations with typhoid vaccine, inactivated, whole cell",cholera vaccine inactivated whole cell
+J07AG51,"hemophilus influenzae B, combinations with toxoids",hemophilus influenzae B combinations with toxoids
+J07AG52,"hemophilus influenzae B, combinations with pertussis and toxoids",pertussis
+J07AG53,"hemophilus influenzae B, combinations with meningococcus C, conjugated",hemophilus influenzae B conjugated
+J07AG53,"hemophilus influenzae B, combinations with meningococcus C, conjugated",meningococcus C conjugated
+J07AH01,"meningococcus A, purified polysaccharides antigen",meningococcus A purified polysaccharides antigen
+J07AH02,other meningococcal monovalent purified polysaccharides antigen,other meningococcal monovalent purified polysaccharides antigen
+J07AH03,"meningococcus A,C, bivalent purified polysaccharides antigen",meningococcus A purified polysaccharides antigen
+J07AH03,"meningococcus A,C, bivalent purified polysaccharides antigen",meningococcus C purified polysaccharides antigen
+J07AH04,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen",meningococcus W-135 purified polysaccharides antigen
+J07AH04,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen",meningococcus C purified polysaccharides antigen
+J07AH04,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen",meningococcus A purified polysaccharides antigen
+J07AH04,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen",meningococcus Y purified polysaccharides antigen
+J07AH05,other meningococcal polyvalent purified polysaccharides antigen,other meningococcal polyvalent purified polysaccharides antigen
+J07AH06,"meningococcus B, outer membrane vesicle vaccine",meningococcus B outer membrane vesicle vaccine
+J07AH07,"meningococcus C, purified polysaccharides antigen conjugated",meningococcus C purified polysaccharides antigen conjugated
+J07AH08,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen conjugated",meningococcus Y purified polysaccharides antigen conjugated
+J07AH08,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen conjugated",meningococcus C purified polysaccharides antigen conjugated
+J07AH08,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen conjugated",meningococcus W-135 purified polysaccharides antigen conjugated
+J07AH08,"meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen conjugated",meningococcus A purified polysaccharides antigen conjugated
+J07AH09,"meningococcus B, multicomponent vaccine",meningococcus B multicomponent vaccine
+J07AH10,"meningococcus A, purified polysaccharides antigen conjugated",meningococcus A purified polysaccharides antigen conjugated
+J07AJ01,"pertussis, inactivated, whole cell",pertussis inactivated whole cell
+J07AJ02,"pertussis, purified antigen",pertussis purified antigen
+J07AJ51,"pertussis, inactivated, whole cell, combinations with toxoids",pertussis inactivated whole cell combinations with toxoids
+J07AJ52,"pertussis, purified antigen, combinations with toxoids",pertussis purified antigen combinations with toxoids
+J07AM01,tetanus toxoid,tetanus toxoid
+J07AM51,"tetanus toxoid, combinations with diphtheria toxoid",diphtheria toxoid
+J07AM51,"tetanus toxoid, combinations with diphtheria toxoid",tetanus toxoid
+J07AM52,"tetanus toxoid, combinations with tetanus immunoglobulin",tetanus toxoid
+J07AM52,"tetanus toxoid, combinations with tetanus immunoglobulin",tetanus immunoglobulin
+J07AP01,"typhoid, oral, live attenuated",typhoid oral live attenuated
+J07AP02,"typhoid, inactivated, whole cell",typhoid inactivated whole cell
+J07AP03,"typhoid, purified polysaccharide antigen",typhoid purified polysaccharide antigen
+J07AP10,"typhoid, combinations with paratyphi types",paratyphi types
+J07AP10,"typhoid, combinations with paratyphi types",typhoid
+J07AR01,"typhus exanthematicus, inactivated, whole cell",typhus exanthematicus inactivated whole cell
+J07BD51,"measles, combinations with mumps, live attenuated",measles live attenuated
+J07BD51,"measles, combinations with mumps, live attenuated",mumps live attenuated
+J07BD52,"measles, combinations with mumps and rubella, live attenuated",mumps live attenuated
+J07BD52,"measles, combinations with mumps and rubella, live attenuated",measles live attenuated
+J07BD52,"measles, combinations with mumps and rubella, live attenuated",rubella live attenuated
+J07BD53,"measles, combinations with rubella, live attenuated",rubella live attenuated
+J07BD53,"measles, combinations with rubella, live attenuated",measles live attenuated
+J07BD54,"measles, combinations with mumps, rubella and varicella, live attenuated",rubella live attenuated
+J07BD54,"measles, combinations with mumps, rubella and varicella, live attenuated",mumps live attenuated
+J07BD54,"measles, combinations with mumps, rubella and varicella, live attenuated",measles live attenuated
+J07BD54,"measles, combinations with mumps, rubella and varicella, live attenuated",varicella live attenuated
+J07BE01,"mumps, live attenuated",mumps live attenuated
+J07BJ01,"rubella, live attenuated",rubella live attenuated
+J07BJ51,"rubella, combinations with mumps, live attenuated",rubella live attenuated
+J07BJ51,"rubella, combinations with mumps, live attenuated",mumps live attenuated
+J07CA01,diphtheria-poliomyelitis-tetanus,diphtheria
+J07CA01,diphtheria-poliomyelitis-tetanus,poliomyelitis
+J07CA01,diphtheria-poliomyelitis-tetanus,tetanus
+J07CA02,diphtheria-pertussis-poliomyelitis-tetanus,diphtheria
+J07CA02,diphtheria-pertussis-poliomyelitis-tetanus,pertussis
+J07CA02,diphtheria-pertussis-poliomyelitis-tetanus,poliomyelitis
+J07CA02,diphtheria-pertussis-poliomyelitis-tetanus,tetanus
+J07CA03,diphtheria-rubella-tetanus,diphtheria
+J07CA03,diphtheria-rubella-tetanus,rubella
+J07CA03,diphtheria-rubella-tetanus,tetanus
+J07CA04,hemophilus influenzae B and poliomyelitis,hemophilus influenzae B
+J07CA04,hemophilus influenzae B and poliomyelitis,poliomyelitis
+J07CA05,diphtheria-hepatitis B-pertussis-tetanus,diphtheria
+J07CA05,diphtheria-hepatitis B-pertussis-tetanus,hepatitis B
+J07CA05,diphtheria-hepatitis B-pertussis-tetanus,pertussis
+J07CA05,diphtheria-hepatitis B-pertussis-tetanus,tetanus
+J07CA06,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus,diphtheria
+J07CA06,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus,hemophilus influenzae B
+J07CA06,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus,pertussis
+J07CA06,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus,poliomyelitis
+J07CA06,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus,tetanus
+J07CA07,diphtheria-hepatitis B-tetanus,diphtheria
+J07CA07,diphtheria-hepatitis B-tetanus,hepatitis B
+J07CA07,diphtheria-hepatitis B-tetanus,tetanus
+J07CA08,hemophilus influenzae B and hepatitis B,hemophilus influenzae B
+J07CA08,hemophilus influenzae B and hepatitis B,hepatitis B
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,diphtheria
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,hemophilus influenzae B
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,hepatitis B
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,pertussis
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,poliomyelitis
+J07CA09,diphtheria-hemophilus influenzae B-pertussis-poliomyelitis-tetanus-hepatitis B,tetanus
+J07CA10,typhoid-hepatitis A,hepatitis A
+J07CA10,typhoid-hepatitis A,typhoid
+J07CA11,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B,diphtheria
+J07CA11,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B,hemophilus influenzae B
+J07CA11,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B,hepatitis B
+J07CA11,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B,pertussis
+J07CA11,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B,tetanus
+J07CA12,diphtheria-pertussis-poliomyelitis-tetanus-hepatitis B,diphtheria
+J07CA12,diphtheria-pertussis-poliomyelitis-tetanus-hepatitis B,hepatitis B
+J07CA12,diphtheria-pertussis-poliomyelitis-tetanus-hepatitis B,pertussis
+J07CA12,diphtheria-pertussis-poliomyelitis-tetanus-hepatitis B,poliomyelitis
+J07CA12,diphtheria-pertussis-poliomyelitis-tetanus-hepatitis B,tetanus
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,diphtheria
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,hemophilus influenzae B
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,hepatitis B
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,meningococcus A
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,meningococcus C
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,pertussis
+J07CA13,diphtheria-hemophilus influenzae B-pertussis-tetanus-hepatitis B-meningococcus A + C,tetanus
+J07AG52,"hemophilus influenzae B, combinations with pertussis and toxoids",hemophilus influenzae B combinations with toxoids

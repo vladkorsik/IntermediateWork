@@ -1,0 +1,93 @@
+A10AB01,,19090247,"Insulin, Prompt Zinc, Human",Ingredient
+A10AB02,,19090244,"Insulin, Prompt Zinc, Beef",Ingredient
+A10AB02,,19090229,"Insulin, Prompt Zinc, Beef-Pork",Ingredient
+A10AB03,,19090249,"Insulin, Prompt Zinc, Pork",Ingredient
+A10AB03,,19090229,"Insulin, Prompt Zinc, Beef-Pork",Ingredient
+A10AC03,,19090187,"Insulin, Protamine Zinc, Pork",Ingredient
+A10AE01,,1586369,"Ultralente Insulin, Human",Ingredient
+A10AE02,,19090226,"Ultralente Insulin, Beef",Ingredient
+A10AE02,,19090221,"Ultralente Insulin, Beef-Pork",Ingredient
+A10AE03,,19090221,"Ultralente Insulin, Beef-Pork",Ingredient
+A10AD03,,40892875,"Insulin, Prompt Zinc, Pork / insulin, protamine zinc, beef Injectable Solution",Clinical Drug Form
+A10AD03,,40955175,"Insulin, Prompt Zinc, Pork / insulin, protamine zinc, beef Injectable Suspension",Clinical Drug Form
+A10AD02,insulin (beef),40052808,"Lente Insulin, Beef Injectable Suspension""",Clinical Drug Form
+A10AD02,insulin (beef),36880850,"Lente Insulin, Beef Prefilled Syringe""",Clinical Drug Form
+A10AD03,insulin (pork),40822618,"Insulin, Zinc, Pork Injectable Solution""",Clinical Drug Form
+A10AD03,insulin (pork),40053128,"Insulin, Zinc, Pork Injectable Suspension""",Clinical Drug Form
+A10AB01,insulin (human),1596977,"Regular Insulin, Human""",Ingredient
+A10AB02,insulin (beef),40052410,"Insulin, Regular, Beef Injectable Solution""",Clinical Drug Form
+A10AB02,insulin (beef),41267334,"Insulin, Regular, Beef Injectable Suspension""",Clinical Drug Form
+A10AB02,insulin (beef),43290600,"Insulin, Regular, Beef Injection""",Clinical Drug Form
+A10AB02,insulin (beef),42479176,"Insulin, Regular, Beef Prefilled Syringe""",Clinical Drug Form
+A10AB03,insulin (pork),40052794,"Insulin, Regular, Pork Injectable Solution""",Clinical Drug Form
+A10AB03,insulin (pork),44183249,"Insulin, Regular, Pork Injectable Suspension""",Clinical Drug Form
+A10AB03,insulin (pork),589897,"Insulin, Regular, Pork Injection""",Clinical Drug Form
+A10AB04,insulin lispro,46233973,Insulin Lispro Cartridge,Clinical Drug Form
+A10AB04,insulin lispro,40052088,Insulin Lispro Injectable Solution,Clinical Drug Form
+A10AB04,insulin lispro,43185381,Insulin Lispro Injectable Suspension,Clinical Drug Form
+A10AB04,insulin lispro,36894419,Insulin Lispro Injection,Clinical Drug Form
+A10AB04,insulin lispro,44094538,Insulin Lispro Intramuscular Solution,Clinical Drug Form
+A10AB04,insulin lispro,46233944,Insulin Lispro Pen Injector,Clinical Drug Form
+A10AB04,insulin lispro,42479188,Insulin Lispro Prefilled Syringe,Clinical Drug Form
+A10AB05,insulin aspart,46234040,"Insulin, Aspart, Human Cartridge""",Clinical Drug Form
+A10AB05,insulin aspart,40051314,"Insulin, Aspart, Human Injectable Solution""",Clinical Drug Form
+A10AB05,insulin aspart,36890546,"Insulin, Aspart, Human Injection""",Clinical Drug Form
+A10AB05,insulin aspart,46234046,"Insulin, Aspart, Human Pen Injector""",Clinical Drug Form
+A10AB05,insulin aspart,42481944,"Insulin, Aspart, Human Prefilled Syringe""",Clinical Drug Form
+A10AB06,insulin glulisine,40051353,"Insulin, Glulisine, Human Injectable Solution""",Clinical Drug Form
+A10AB06,insulin glulisine,36881800,"Insulin, Glulisine, Human Cartridge""",Clinical Drug Form
+A10AE04,insulin glargine,42481504,Insulin Glargine Prefilled Syringe,Clinical Drug Form
+A10AE04,insulin glargine,46234097,Insulin Glargine Pen Injector,Clinical Drug Form
+A10AE04,insulin glargine,36894444,Insulin Glargine Injection,Clinical Drug Form
+A10AE04,insulin glargine,41080094,Insulin Glargine Injectable Suspension,Clinical Drug Form
+A10AE04,insulin glargine,40051347,Insulin Glargine Injectable Solution,Clinical Drug Form
+A10AE04,insulin glargine,36888520,Insulin Glargine Cartridge,Clinical Drug Form
+A10AE04,insulin glargine,43258682,Insulin Glargine Auto-Injector,Clinical Drug Form
+A10AE05,insulin detemir,42479614,insulin detemir Prefilled Syringe,Clinical Drug Form
+A10AE06,insulin degludec,42481395,insulin degludec Prefilled Syringe,Clinical Drug Form
+A10AE06,insulin degludec,35602719,insulin degludec Pen Injector,Clinical Drug Form
+A10AE06,insulin degludec,44068834,insulin degludec Injectable Suspension,Clinical Drug Form
+A10AE06,insulin degludec,36409557,insulin degludec Injectable Solution,Clinical Drug Form
+A10AE06,insulin detemir,46234190,insulin detemir Pen Injector,Clinical Drug Form
+A10AE07,insulin detemir,36885629,insulin detemir Injection,Clinical Drug Form
+A10AE08,insulin detemir,44172014,insulin detemir Injectable Suspension,Clinical Drug Form
+A10AE09,insulin detemir,40056632,insulin detemir Injectable Solution,Clinical Drug Form
+A10AB06,insulin glulisine,36892502,"Insulin, Glulisine, Human Injection""",Clinical Drug Form
+A10AB06,insulin glulisine,42481595,"Insulin, Glulisine, Human Prefilled Syringe""",Clinical Drug Form
+A10AB06,insulin glulisine,46233875,"Insulin, Glulisine, Human Pen Injector""",Clinical Drug Form
+A10AC01,insulin (human),40052393,"Insulin, Protamine Zinc, Human Injectable Suspension""",Clinical Drug Form
+A10AC02,insulin (beef),40052382,"insulin, protamine zinc, beef Injectable Suspension""",Clinical Drug Form
+A10AC02,insulin (beef),44042855,"insulin, protamine zinc, beef Injectable Solution""",Clinical Drug Form
+A10AC04,insulin lispro,40052077,"Insulin Lispro / Insulin, Protamine Lispro, Human Injectable Suspension""",Clinical Drug Form
+A10AC04,insulin lispro,41080093,"Insulin Lispro / Insulin, Protamine Lispro, Human Prefilled Syringe""",Clinical Drug Form
+A10AC04,insulin lispro,43263337,"Insulin Lispro / Insulin, Protamine Lispro, Human Injection""",Clinical Drug Form
+A10AC04,insulin lispro,43295949,"Insulin Lispro / Insulin, Protamine Lispro, Human Cartridge""",Clinical Drug Form
+A10AC04,insulin lispro,46234016,"Insulin Lispro / Insulin, Protamine Lispro, Human Pen Injector""",Clinical Drug Form
+A10AD01,insulin (human),43514641,"insulin, isophane / Regular Insulin, Human Cartridge""",Clinical Drug Form
+A10AD01,insulin (human),40955174,"insulin, isophane / Regular Insulin, Human Injectable Solution""",Clinical Drug Form
+A10AD01,insulin (human),40051377,"insulin, isophane / Regular Insulin, Human Injectable Suspension""",Clinical Drug Form
+A10AD01,insulin (human),43515888,"insulin, isophane / Regular Insulin, Human Injection""",Clinical Drug Form
+A10AD01,insulin (human),46234216,"insulin, isophane / Regular Insulin, Human Pen Injector""",Clinical Drug Form
+A10AD01,insulin (human),40159519,"insulin, isophane / Regular Insulin, Human Prefilled Syringe""",Clinical Drug Form
+A10AD02,insulin (beef),41142933,"Insulin Glargine / Insulin, Prompt Zinc, Beef Injectable Solution""",Clinical Drug Form
+A10AD02,insulin (beef),40892875,"Insulin, Prompt Zinc, Pork / insulin, protamine zinc, beef Injectable Solution""",Clinical Drug Form
+A10AD02,insulin (beef),40955175,"Insulin, Prompt Zinc, Pork / insulin, protamine zinc, beef Injectable Suspension""",Clinical Drug Form
+A10AD03,insulin (pork),40830501,"Insulin, Pork / Insulin, Regular, Pork Injectable Solution""",Clinical Drug Form
+A10AD03,insulin (pork),44160710,"Insulin, Pork / Insulin, Regular, Pork Injectable Suspension""",Clinical Drug Form
+A10AD04,insulin lispro,43295949,"Insulin Lispro / Insulin, Protamine Lispro, Human Cartridge""",Clinical Drug Form
+A10AD04,insulin lispro,40052077,"Insulin Lispro / Insulin, Protamine Lispro, Human Injectable Suspension""",Clinical Drug Form
+A10AD04,insulin lispro,43263337,"Insulin Lispro / Insulin, Protamine Lispro, Human Injection""",Clinical Drug Form
+A10AD04,insulin lispro,46234016,"Insulin Lispro / Insulin, Protamine Lispro, Human Pen Injector""",Clinical Drug Form
+A10AD04,insulin lispro,41080093,"Insulin Lispro / Insulin, Protamine Lispro, Human Prefilled Syringe""",Clinical Drug Form
+A10AD05,insulin aspart,43263332,"Insulin, Aspart Protamine, Human / Insulin, Aspart, Human Cartridge""",Clinical Drug Form
+A10AD06,insulin degludec and insulin aspart,793407,"insulin degludec / Insulin, Aspart, Human Pen Injector""",Clinical Drug Form
+A10AD06,insulin degludec and insulin aspart,42963019,"insulin degludec / Insulin, Aspart, Human Injectable Solution""",Clinical Drug Form
+A10AD06,insulin aspart,40051007,"Insulin, Aspart Protamine, Human / Insulin, Aspart, Human Injectable Suspension""",Clinical Drug Form
+A10AD07,insulin aspart,43295944,"Insulin, Aspart Protamine, Human / Insulin, Aspart, Human Injection""",Clinical Drug Form
+A10AD08,insulin aspart,46234052,"Insulin, Aspart Protamine, Human / Insulin, Aspart, Human Pen Injector""",Clinical Drug Form
+A10AD09,insulin aspart,41111420,"Insulin, Aspart Protamine, Human / Insulin, Aspart, Human Prefilled Syringe""",Clinical Drug Form
+A10AE10,insulin detemir,36883706,insulin detemir Cartridge,Clinical Drug Form
+A10AE54,insulin glargine and lixisenatide,1718598,Insulin Glargine / Lixisenatide Pen Injector,Clinical Drug Form
+A10AE56,insulin degludec and liraglutide,1718705,insulin degludec / liraglutide Pen Injector,Clinical Drug Form
+A10AF01,insulin (human),45776620,"Regular Insulin, Human Inhalant Powder""",Clinical Drug Form
+A10AF01,insulin (human),40148825,"insulin human, rDNA origin Inhalant Powder""",Clinical Drug Form
