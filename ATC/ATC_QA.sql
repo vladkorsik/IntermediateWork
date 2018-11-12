@@ -17,4 +17,15 @@ select * from atc_drug_scraper a left join dev_atc.final_assembly_woca -- 1647
 using (atc_code)
 where sdrug is null and length(atc_code) = 7;
 
+drop table temp_check;
+create table temp_check as
+select distinct atc_name, c.concept_name
+from final_assembly f
+  join devv5.concept_ancestor ca on ca.descendant_concept_id = f.concept_id
+  join concept c on c.concept_id = ca.ancestor_concept_id and c.concept_class_id = 'Ingredient'
+where not atc_name ~ 'combination|agents|drugs|supplements|corticosteroids|compounds|sulfonylureas|preparations|thiazides|antacid|antiinfectives|calcium$|potassium$|sodium$|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics'
+and c.concept_name not in ('Inert Ingredients') -- a component of contraceptive packs
+;
+select * from temp_check
+where atc_name in (select atc_name from temp_check group by atc_name having count(1)>1);
 
