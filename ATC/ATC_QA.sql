@@ -29,3 +29,26 @@ and c.concept_name not in ('Inert Ingredients') -- a component of contraceptive 
 select * from temp_check
 where atc_name in (select atc_name from temp_check group by atc_name having count(1)>1);
 
+
+drop table tempt;
+create table tempt as
+select * from drug_concept_stage where concept_code not in (select concept_code_1 from internal_relationship_stage)
+and concept_class_id = 'Drug Product';
+
+insert into internal_relationship_stage
+select distinct concept_code, regexp_replace(concept_code,'\w+ ','') from tempt
+join reference using (concept_code)
+join atc_drugs_scraper using (atc_code)
+where not atc_name ~ 'and|vaccine|antigen|-|comb|with|excl'
+and regexp_replace(concept_code,'\w+ ','')!=concept_code
+;
+
+insert into internal_relationship_stage
+select distinct concept_code, regexp_replace(concept_code,'\w+ ','')
+from
+  tempt where concept_code like 'J05AR08%';
+
+insert into internal_relationship_stage
+select distinct concept_code, 'rilpivirine'
+from
+  tempt where concept_code like 'J05AR08%';
