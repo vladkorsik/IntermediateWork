@@ -305,12 +305,12 @@ values ('G02BB01','G02BB01 Vaginal Ring');
 
 -- 1. Drugs
 insert into drug_concept_stage (CONCEPT_NAME,VOCABULARY_ID,CONCEPT_CLASS_ID,STANDARD_CONCEPT,CONCEPT_CODE,POSSIBLE_EXCIPIENT,DOMAIN_ID,VALID_START_DATE,VALID_END_DATE,INVALID_REASON,SOURCE_CONCEPT_CLASS_ID)
-select atc_name, 'ATC', 'Drug Product', 'S', coalesce(concept_code,atc_code) , null, 'Drug' , to_date ('YYYYMMDD','19700101'),to_date ('YYYYMMDD','20991231'), null, null
+select atc_name, 'ATC', 'Drug Product', 'S', coalesce(concept_code,atc_code) , null, 'Drug' ,to_date('19700101','YYYYMMDD'),to_date ('20991231','YYYYMMDD'), null, null
 from reference
 ;
 -- 2. Dose Forms
 insert into drug_concept_stage (CONCEPT_NAME,VOCABULARY_ID,CONCEPT_CLASS_ID,STANDARD_CONCEPT,CONCEPT_CODE,POSSIBLE_EXCIPIENT,DOMAIN_ID,VALID_START_DATE,VALID_END_DATE,INVALID_REASON,SOURCE_CONCEPT_CLASS_ID)
-select concept_name, 'ATC', 'Dose Form', null, concept_name , null, 'Drug' , to_date ('YYYYMMDD','19700101'),to_date ('YYYYMMDD','20991231'), null, null
+select concept_name, 'ATC', 'Dose Form', null, concept_name , null, 'Drug' , to_date ('19700101','YYYYMMDD'),to_date ('20991231','YYYYMMDD'), null, null
 from concept 
 where vocabulary_id like 'RxNorm%' and invalid_reason is null and concept_class_id = 'Dose Form'
 ;
@@ -318,7 +318,7 @@ where vocabulary_id like 'RxNorm%' and invalid_reason is null and concept_class_
 -- 3. Ingredients
 --non-combo
 insert into drug_concept_stage
-select distinct atc_name, 'ATC','Ingredient','S',atc_name, null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null
+select distinct atc_name, 'ATC','Ingredient','S',atc_name, null,'Drug',current_date, to_date ('20991231','YYYYMMDD'), null, null
 from atc_1
 ;
 
@@ -345,9 +345,9 @@ and  regexp_replace (atc_name,'((, incl\.)?(,)? combinations)| in combination( w
 
 --quinupristin/dalfopristin
 insert into drug_concept_stage
-select 'quinupristin', 'ATC','Ingredient','S','quinupristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
+select 'quinupristin', 'ATC','Ingredient','S','quinupristin', null,'Drug',current_date, to_date ('20991231','YYYYMMDD'), null, null;
 insert into drug_concept_stage
-select 'dalfopristin', 'ATC','Ingredient','S', 'dalfopristin', null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null;
+select 'dalfopristin', 'ATC','Ingredient','S', 'dalfopristin', null,'Drug',current_date, to_date ('20991231','YYYYMMDD'), null, null;
 
 
 /*insert into internal_relationship_stage (concept_code_1, concept_code_2)
@@ -492,7 +492,7 @@ from
 join forms using (label);
 
 insert into drug_concept_stage
-select distinct atc_code||' '||form,'ATC','Drug Product',null,atc_code||' '||form, null,'Drug',current_date, to_date ('YYYYMMDD','20991231'), null, null
+select distinct atc_code||' '||form,'ATC','Drug Product',null,atc_code||' '||form, null,'Drug',current_date, to_date ('20991231','YYYYMMDD'), null, null
 from 
 (select atc_code, 's' as label from systemic) s
 join forms using (label);
