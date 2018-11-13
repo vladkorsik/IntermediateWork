@@ -42,7 +42,7 @@ from atc_to_drug_5 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 join devv5.concept_ancestor on ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
-join drug_strength d on d.drug_concept_id = c.concept_id
+left join drug_strength d on d.drug_concept_id = c.concept_id
 where descendant_concept_id not in (select concept_id from final_assembly)
 and not exists
 	(select 1 from concept c2 join devv5.concept_ancestor ca2
@@ -56,7 +56,7 @@ from atc_to_drug_6 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 join devv5.concept_ancestor ca on ca.ancestor_concept_id = a.concept_id
 join concept c on c.concept_id = ca.descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S'
-join drug_strength d on d.drug_concept_id = c.concept_id
+left join drug_strength d on d.drug_concept_id = c.concept_id
 where descendant_concept_id not in (select concept_id from final_assembly)
 and not exists
 	(select 1 from concept c2 join devv5.concept_ancestor ca2
