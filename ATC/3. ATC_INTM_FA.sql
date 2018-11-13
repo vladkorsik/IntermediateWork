@@ -66,6 +66,17 @@ join concept c on c.concept_id=drug_concept_id
 where concept_code_1 not in (select concept_code_1 from atc_to_drug_1) and concept_code_1 not like '% %' --w/o forms
 ;
 
+delete from atc_to_drug_1
+where atc_name like '%,%,%and%'
+and not atc_name ~* 'comb|other|whole root|selective'
+and concept_name not like '%/%/%/%';
+
+delete from atc_to_drug_1
+where atc_name like '%,%and%'
+and atc_name not like '%,%,%and%'
+and not atc_name ~* 'comb|other|whole root|selective'
+and concept_name not like '% / % / %';
+
 -- introducing precedence
 insert into atc_to_drug_1
 with atc_comb as
