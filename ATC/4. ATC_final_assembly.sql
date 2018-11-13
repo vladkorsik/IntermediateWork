@@ -72,11 +72,25 @@ join atc_drugs_scraper s using (atc_code)
 join devv5.concept_ancestor ca on ca.ancestor_concept_id = m.concept_id
 join concept c on c.concept_id = ca.descendant_concept_id
 join drug_strength d on d.drug_concept_id = c.concept_id
+/*
 where not exists
 	(select 1 from concept c2 join devv5.concept_ancestor ca2
 	 on ca2.ancestor_concept_id = c2.concept_id and c2.concept_class_id = 'Ingredient'
 	 where ca2.descendant_concept_id = d.drug_concept_id and c2.concept_id!=d.ingredient_concept_id) -- excluding combos
+
+*/
 ;
+
+insert into final_assembly
+select distinct  s.*, c.concept_id, c.concept_name, c.concept_code, c.concept_class_id, f.order
+from final_assembly_woca f
+join devv5.concept_ancestor ca on ca.ancestor_concept_id = cast(f.concept_id as int)
+join devv5.concept c on c.concept_id = descendant_concept_id and c.concept_class_id like '%Pack%'
+join atc_drugs_scraper s on s.atc_code=f.atc_code
+where s.atc_code ~ 'G03FB|G03AB'; -- packs
+
+delete from final_assembly
+where atc_code ~ 'G03FB|G03AB' and concept_class_id in ('Clinical Drug Form','Ingredient');
 
 delete from  final_assembly
 where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
