@@ -96,6 +96,19 @@ delete from  final_assembly
 where atc_name like '%and estrogen%' -- if there are regular estiol/estradiol/EE
 and concept_id in (select concept_id from final_assembly group by concept_id having count(1)>1);
 
+
+--temporary
+delete from final_assembly
+where atc_name like '%,%,%and%'
+and not atc_name ~* 'comb|other|whole root|selective'
+and concept_name not like '%/%/%/%';
+
+delete from final_assembly
+where atc_name like '%,%and%'
+and atc_name not like '%,%,%and%'
+and not atc_name ~* 'comb|other|whole root|selective'
+and concept_name not like '% / % / %';
+
 --table wo ancestor
 drop table final_assembly_woCA;
 create table final_assembly_woCA
