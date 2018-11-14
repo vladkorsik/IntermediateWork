@@ -1,0 +1,56 @@
+--Insertion to DS_STAGE using pi
+--solid grams
+INSERT into ds_stage
+SELECT DISTINCT j.drug_code,
+                dcs.concept_code,
+                CAST (substring (standardized_unit from '^\d+') as double precision),
+                substring (standardized_unit from 'g')
+FROM j
+
+JOIN pi
+    ON j.drug_code = pi.drug_code
+
+JOIN drug_concept_stage dcs
+    ON pi.ing_name = dcs.concept_name
+
+WHERE general_name !~* '\/' AND standardized_unit ~* '^\d+g$';
+
+--liquid % + ml
+INSERT into ds_stage
+SELECT DISTINCT j.drug_code,
+                dcs.concept_code,
+                CAST (null as double precision),
+                null,
+                CAST (substring (lower (standardized_unit) from  '^\d+\.*\d*(?=\%)') as double precision) * CAST (substring (lower (standardized_unit) from '(?<=%)\d+(?=ml$)') as double precision) * 10,
+                'mg',
+                CAST (substring (lower (standardized_unit) from '(?<=%)\d+(?=ml$)') as double precision),
+                'ml'
+FROM j
+
+JOIN pi
+    ON j.drug_code = pi.drug_code
+
+JOIN drug_concept_stage dcs
+    ON pi.ing_name = dcs.concept_name
+
+WHERE general_name !~* '\/' AND standardized_unit ~* '^\d+\.*\d*\%\d+ml$';
+
+--solid % + g
+INSERT into ds_stage
+SELECT DISTINCT j.drug_code,
+                dcs.concept_code,
+                CAST (null as double precision),
+                null,
+                CAST (substring (standardized_unit from '^\d+\.*\d*(?=\%)') as double precision) * CAST (substring (standardized_unit from '(?<=%)\d+(?=g$)') as double precision) *10,
+                'mg',
+                CAST (substring (standardized_unit from '(?<=%)\d+(?=g$)') as double precision) * 1000,
+                'mg'
+FROM j
+
+JOIN pi
+    ON j.drug_code = pi.drug_code
+
+JOIN drug_concept_stage dcs
+    ON pi.ing_name = dcs.concept_name
+
+WHERE general_name !~* '\/' AND standardized_unit ~* '^\d+\.*\d*\%\d+g$';

@@ -1,0 +1,65 @@
+-- for #21
+insert into concept_relationship_manual
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id, TO_DATE('19700101', 'YYYYMMDD'), current_date, 'D'
+from concept_relationship cr
+join concept c on c.concept_id = cr.concept_id_1
+join concept c2 on c2.concept_id = cr.concept_id_2
+where cr.relationship_id = 'ATC - RxNorm name' and cr.invalid_reason is null;
+
+-- deprecate old ingredients
+insert into concept_relationship_manual
+select c.concept_code, c2.concept_code, c.vocabulary_id, c2.vocabulary_id, relationship_id,  TO_DATE('19700101', 'YYYYMMDD'), current_date, 'D'
+from concept_relationship_stage cr
+join concept_stage c on c.concept_code = cr.concept_code_1
+join concept c2 on c2.concept_code = cr.concept_code_2 and cr.vocabulary_id_2 = c2.vocabulary_id
+where cr.relationship_id = 'ATC - RxNorm' and cr.invalid_reason is null and c2.concept_class_id in ('Ingredient','Precise Ingredient')
+and not exists( select 1 from final_assembly f join concept cc on cc.concept_id = f.concept_id where f.atc_code = c.concept_code and cc.concept_code = c2.concept_code)
+;
+
+-- insert new relationships
+insert into concept_relationship_stage 
+(concept_id_1,concept_id_2,concept_code_1,concept_code_2,vocabulary_id_1,vocabulary_id_2,relationship_id,valid_start_date,valid_end_date,invalid_reason)
+select null,null,f.atc_code, f.concept_code, 'ATC', c.vocabulary_id, 'ATC - RxNorm', current_date, TO_DATE('20991231', 'YYYYMMDD'),null
+from final_assembly f
+join concept c
+using (concept_id)
+where not exists( select 1 from concept_relationship_stage cr where cr.concept_code_1 = f.atc_code and cr.concept_code_2 = f.concept_code)
+;
+
+
+select * from final_assembly
+where atc_name ~ ('combination|agents|drugs|supplements|antacid|antiinfectives|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics')
+;
+
+--23. Remove direct links to RxNorm Ingredients for all those ATC5 concepts that are ambiguous and likely are either defined as combinations or with certain Drug Forms only
+ANALYZE concept_relationship_stage;
+DELETE
+FROM concept_relationship_stage crs
+WHERE EXISTS (
+		SELECT 1
+		FROM concept_stage c1,
+			concept c2,
+			concept_relationship_stage crs_int
+		WHERE c1.concept_code = crs_int.concept_code_1
+			AND c1.vocabulary_id = crs_int.vocabulary_id_1
+			AND c2.concept_code = crs_int.concept_code_2
+			AND c2.vocabulary_id = crs_int.vocabulary_id_2
+			AND c1.vocabulary_id = 'ATC'
+			AND c1.concept_class_id = 'ATC 5th'
+			AND c1.invalid_reason IS NULL
+			AND c2.vocabulary_id = 'RxNorm'
+			AND c2.concept_class_id = 'Ingredient'
+			AND crs_int.relationship_id = 'ATC - RxNorm'
+				)
+			AND crs_int.invalid_reason IS NULL
+			AND c1.concept_name ~ ('combination|agents|drugs|supplements|antacid|antiinfectives|antiseptics|antibiotics|mydriatics|psycholeptic|other|diuretic|nitrates|analgesics')
+
+				)
+			AND crs_int.concept_code_1 = crs.concept_code_1
+			AND crs_int.vocabulary_id_1 = crs.vocabulary_id_1
+			AND crs_int.concept_code_2 = crs.concept_code_2
+			AND crs_int.vocabulary_id_2 = crs.vocabulary_id_2
+			AND crs_int.relationship_id = crs.relationship_id
+		);
+
+
