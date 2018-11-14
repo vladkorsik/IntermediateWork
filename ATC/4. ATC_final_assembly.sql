@@ -50,12 +50,12 @@ and not exists
 	 where ca2.descendant_concept_id = d.drug_concept_id and c2.concept_id!=d.ingredient_concept_id) -- excluding combos
 ;
 
-select  distinct s.*, c.concept_id, c.concept_name, c.concept_code, c.concept_class_id, '5' as order
+select  distinct a.*,c.*
 from atc_to_drug_5 a
 join atc_drugs_scraper s on substring (concept_code_1,'\w+')=atc_code
 join devv5.concept_ancestor on ancestor_concept_id = a.concept_id
-join concept c on c.concept_id = descendant_concept_id  and c.vocabulary_id like 'RxNorm%' and c.standard_concept = 'S' 
-and (c.concept_class_id in ('Clinical Pack','Branded Pack','Marketed Product') and c.concept_name like '%Pack%' )
+join concept c on c.concept_id = descendant_concept_id  and c.vocabulary_id like 'RxNorm%'
+									and c.standard_concept = 'S' and c.concept_class_id in ('Clinical Pack ','Branded Pack')
 join concept_relationship cr on cr.concept_id_1 = c.concept_id and cr.invalid_reason is null and cr.relationship_id = 'Contains'
 join drug_strength d on d.drug_concept_id = cr.concept_id_2
 where descendant_concept_id not in (select concept_id from final_assembly)
