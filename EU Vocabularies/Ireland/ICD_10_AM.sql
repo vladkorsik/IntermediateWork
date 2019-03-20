@@ -1,14 +1,26 @@
-create table ICD_10_AM_part
+create table ICD_10_AM_part1
 (
   code varchar(50),
   description varchar(500),
   ICD10code varchar(50)
-)
+);
+
+create table ICD_10_AM_part2
+(
+  code varchar(50),
+  description varchar(500),
+  ICD10code varchar(50)
+);
+
+create table ICD_10_AM_full as
+  select * from ICD_10_AM_part1
+  union
+  select * from ICD_10_AM_part2;
 
 --Число концептов в source vocabulary
---4635
+--17063
 select count (distinct code)
-from ICD_10_AM_part
+from icd_10_am_full
 ;
 
 --Число концептов в target CDM vocabulary
@@ -23,7 +35,7 @@ GROUP BY vocabulary_id
 --Проверка качества джойна с ICD10, исключая ICD10CM
 --каунт отсюда не берем
 select am.code, am.description, c.concept_name
-from ICD_10_AM_part am
+from ICD_10_AM_full am
 join devv5.concept c
          on c.concept_code = am.code
             AND c.vocabulary_id in ('ICD10', 'ICD10CM') -- vocabularies to be joined
@@ -43,7 +55,7 @@ limit 1000
 --то есть наоборот
 --каунт отсюда не берем
 select am.code, am.description, c.concept_name
-from ICD_10_AM_part am
+from ICD_10_AM_full am
 join devv5.concept c
          on c.concept_code = am.code
             AND c.vocabulary_id in ('ICD10', 'ICD10CM') -- vocabularies to be joined
@@ -63,7 +75,7 @@ limit 1000
 -- (обязательное наличие кода сразу в 2х словорях, и при этом с одинаковыми именами в разных словарях)
 --каунт тут не берем
 select am.code, am.description, c.concept_name
-from ICD_10_AM_part am
+from ICD_10_AM_full am
 join devv5.concept c
          on c.concept_code = am.code
             AND c.vocabulary_id in ('ICD10', 'ICD10CM') -- vocabularies to be joined
@@ -100,7 +112,7 @@ limit 1000
 -- (обязательное наличие кода сразу в 2х словорях, но при этом с разными именами в разных словарях)
 --каунт отсюда не берем
 select am.code, c.vocabulary_id, am.description, c.concept_name
-from ICD_10_AM_part am
+from ICD_10_AM_full am
 join devv5.concept c
          on c.concept_code = am.code
             AND c.vocabulary_id in ('ICD10', 'ICD10CM') -- vocabularies to be joined
@@ -136,7 +148,7 @@ limit 1000
 --это пытаемся заджонить вручную (Афина + SQL)
 --каунт отсюда не берем
 select distinct am.code, am.description
-from  ICD_10_AM_part am
+from  ICD_10_AM_full am
 left join devv5.concept c
 on am.code = c.concept_code
          and  c.vocabulary_id in ('ICD10', 'ICD10CM') --target vocabs
@@ -144,11 +156,11 @@ where c.concept_code is null
 ;
 
 --COUNT of OMOPed source codes
---1447
+--13725
 SELECT COUNT (*)
 FROM (
     SELECT DISTINCT code as concept_code
-    FROM ICD_10_AM_part
+    FROM ICD_10_AM_full
          ) as a
 where exists
       (select 1
@@ -159,11 +171,11 @@ where exists
 ;
 
 --COUNT of mapped source codes
---1425
+--13652
 SELECT COUNT (*)
 FROM (
     SELECT DISTINCT code as concept_code
-    FROM ICD_10_AM_part
+    FROM ICD_10_AM_full
          ) as a
 where exists
       (select 1
@@ -177,11 +189,11 @@ where exists
 ;
 
 --каунт сорс кодов, заджойненных только с ICD10
---12
+--2669
 SELECT COUNT (*)
 FROM (
     SELECT DISTINCT code as concept_code
-    FROM ICD_10_AM_part
+    FROM ICD_10_AM_full
          ) as a
 
 where exists
@@ -200,11 +212,11 @@ AND NOT exists(
 ;
 
 --каунт сорс кодов, заджойненных только с ICD10CM
---1371
+--1464
 SELECT COUNT (*)
 FROM (
     SELECT DISTINCT code as concept_code
-    FROM ICD_10_AM_part
+    FROM ICD_10_AM_full
          ) as a
 
 where exists
@@ -223,11 +235,11 @@ AND NOT exists(
 ;
 
 --каунт сорс кодов, заджойненных сразу с ICD10 и ICD10CM
---64
+--9592
 SELECT COUNT (*)
 FROM (
     SELECT DISTINCT code as concept_code
-    FROM ICD_10_AM_part
+    FROM ICD_10_AM_full
          ) as a
 
 where exists
