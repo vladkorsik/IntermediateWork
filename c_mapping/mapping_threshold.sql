@@ -8,13 +8,13 @@ create table tab_conditions_for_custom_mapping
   name varchar(500)
 );
 
---2284
+--3085
 --Total number of rows
 --Junk codes removed by hand
 select count(*) from tab_conditions_for_custom_mapping
 where code not in ('16157', '15007', '18817', '17340', '16931', '16587', '17336', '15313', '15038');
 
---58011
+--105787
 --Total number of counts excluding junk codes
 --Junk codes removed by hand
 select SUM(count) from tab_conditions_for_custom_mapping
@@ -67,29 +67,31 @@ where code not in (
 and code not in ('16157', '15007', '18817', '17340', '16931', '16587', '17336', '15313', '15038'));
 ;
 
+--3006
+select SUM(count) from tab_conditions_mapped;
 
 
 --STEP 3: Calculating numbers
 SELECT count(code)+373 as mapped_codes, 1 as full_covered_count_of_records, 100.0 as percent_covered from tab_conditions_not_mapped
 union all
-SELECT count(code) as mapped_codes, 0 as full_covered_count_of_records, round((SUM(count)*100.0/58011), 2) as percent_covered from tab_conditions_mapped
+SELECT count(code) as mapped_codes, 0 as full_covered_count_of_records, round((SUM(count)*100.0/105787), 2) as percent_covered from tab_conditions_mapped
 union all
-SELECT count(code)+373 as mapped_codes, 100 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 100 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 100
 union all
-SELECT count(code)+373 as mapped_codes, 20 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 20 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 20
 union all
-SELECT count(code)+373 as mapped_codes, 10 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 10 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 10
 union all
-SELECT count(code)+373 as mapped_codes, 5 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 5 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 5
 union all
-SELECT count(code)+373 as mapped_codes, 3 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 3 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 3
 union all
-SELECT count(code)+373 as mapped_codes, 2 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/58011), 1) as percent_covered from tab_conditions_not_mapped
+SELECT count(code)+373 as mapped_codes, 2 as full_covered_count_of_records, round(((SUM(count)+3006)*100.0/105787), 1) as percent_covered from tab_conditions_not_mapped
 where count >= 2
 order by percent_covered asc;
 
