@@ -44,6 +44,13 @@ WHERE NOT EXISTS (  SELECT 1
                     FROM projectname_vocabularyname m
                     WHERE s.source_code = m.source_code);
 
+--check if any source codes are modified
+SELECT *
+FROM projectname_vocabularyname m
+WHERE NOT EXISTS (  SELECT 1
+                    FROM projectname_vocabularyname_source s
+                    WHERE s.source_code = m.source_code);
+
 --check if target concepts exist in the concept table
 SELECT *
 FROM projectname_vocabularyname j1
