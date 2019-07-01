@@ -1575,3 +1575,82 @@ WHERE c.standard_concept = 'S'
                 )
 ORDER BY concept_name
 ;
+
+
+--july 1st
+--all possible relationship types
+SELECT cr.*
+FROM devv5.concept_relationship cr
+JOIN devv5.concept c
+    ON c.concept_id = cr.concept_id_1 AND c.concept_class_id = 'Ingredient' AND c.standard_concept = 'S'
+JOIN devv5.concept cc
+    ON cc.concept_id = cr.concept_id_2 AND cc.concept_class_id = 'Clinical Drug Form' AND cc.standard_concept = 'S'
+--WHERE cr.relationship_id = ''
+;
+--all existing relationships for concept
+SELECT DISTINCT cr.relationship_id, c.*
+FROM devv5.concept_relationship cr
+JOIN devv5.concept c
+    ON cr.concept_id_2 = c.concept_id
+    AND cr.concept_id_1 = 44120345 --concept_id
+WHERE c.domain_id = 'Drug'
+;
+
+
+--ATC_brande table creation
+create  table ATC_brands as (select split_part(concept_name, '[', 2) as target_concept_name, a.atc_name
+from dev_vkorsik.atc_july a
+where concept_class_id ~*'branded');
+--drop table
+drop table ATC_brands;
+--branded_drug_forms
+INSERT INTO ATC_brands
+select split_part(concept_name, '[', 2) as target_concept_name
+from dev_vkorsik.atc_july a
+where concept_class_id ~*'branded';
+--clinical_form
+INSERT INTO ATC_brands
+select distinct split_part(c.concept_name, '[', 2) as target_concept_name,a.atc_name
+from dev_vkorsik.atc_july a
+join  devv5.concept_relationship cr
+on a.concept_id=cr.concept_id_1
+join devv5.concept c
+on c.concept_id=cr.concept_id_2
+where a.concept_class_id ~*'clinic'
+and cr.relationship_id~*'has trade'
+and cr.invalid_reason is null;
+--ingredients
+INSERT INTO ATC_brands
+select c.concept_name as target_concept_name,a.atc_name
+from dev_vkorsik.atc_july a
+join devv5.concept_relationship cr
+on a.concept_id=cr.concept_id_1
+join devv5.concept c
+on c.concept_id=cr.concept_id_2
+where a.concept_class_id !~*'branded'
+and a.concept_class_id !~*'clinic'
+  and cr.relationship_id='Has brand name'
+and cr.invalid_reason is null;
+
+
+
+
+
+
+--check
+SELECT *
+FROM dev_vkorsik.atc_july a1
+WHERE NOT EXISTS (  SELECT *
+                    FROM dev_vkorsik.atc_july a2
+                    JOIN devv5.concept c
+                        ON a2.concept_id = c.concept_id
+                            AND c.concept_name = a2.concept_name
+                            AND c.vocabulary_id = a2.vocabulary_id
+                            AND c.domain_id = a2.domain_id
+                            AND c.standard_concept   in ('S', 'standard')
+                            AND c.invalid_reason is NULL
+                    WHERE a1.atc_code = a2.atc_code
+ )
+;
+
+
