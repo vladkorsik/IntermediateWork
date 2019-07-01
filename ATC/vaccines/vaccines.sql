@@ -327,7 +327,7 @@ Menomune A/C/Y/W-135, ACWY Vax, MENCEVAX acwy, Menomune-A
 
 
 
-        --  Meningococcus Tetanus Toxoid Conjugate Vaccine
+    --  Meningococcus Tetanus Toxoid Conjugate Vaccine
 --C
 Menitorix (it includes HIB as well), Neisvac C
 --CY
@@ -744,29 +744,32 @@ JOIN devv5.concept cc
 ;
 
 
-
---TODO: check if ingredients having no forms are lost in mapping
---TODO: check if form is existing in both lists (ATC + corrections)
---TODO: check if some forms are lost
-
-
-
-
 --all existing relationships for concept
 SELECT DISTINCT cr.relationship_id, c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 46276403 --concept_id
+    AND cr.concept_id_1 = 44120345 --concept_id
 
 WHERE c.domain_id = 'Drug'
 ;
 
 
+--TODO: check if ingredients having no forms are lost in mapping
+--TODO: check if form is existing in both lists (ATC + corrections)
+--TODO: check if some forms are lost
+--TODO: check forms mentioned twice
 
-/*
+
+
+
+
+
+
 --to find the form
---meningococcus A, purified polysaccharides antigen conjugated
+--pneumococcus, purified polysaccharides antigen
+--pneumococcus, purified polysaccharides antigen conjugated
+--pneumococcus purified polysaccharides antigen and haemophilus influenzae, conjugated
 SELECT *
 FROM devv5.concept c
 WHERE c.standard_concept = 'S'
@@ -778,8 +781,48 @@ WHERE c.standard_concept = 'S'
                 WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
                                              SELECT concept_id, concept_name
                                              FROM devv5.concept
-                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
-                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group B|neisseria catarrhalis flava|group C'
+                                             WHERE concept_name ~* 'pneumo|S\.pn|S\. pn'
+                                             AND concept_name !~* 'Klebsiella pneumoniae|Legionella pneumophila|Mycoplasma pneumoniae'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('Staphylococcus aureus', 'Klebsiella pneumoniae', 'Mycobacterium bovis', 'streptococcus pneumoniae immunoserum rabbit')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+--to find the form
+--plague, inactivated, whole cell
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'plague|Yersinia|Y\.p|Y\. p'
+                                             AND concept_name !~* 'Yersinia enterocolitica'
                                              AND domain_id = 'Drug'
                                              AND concept_class_id = 'Ingredient'
                                              AND standard_concept = 'S'
@@ -802,7 +845,373 @@ WHERE c.standard_concept = 'S'
                 AND cr.concept_id_2 = c.concept_id
                 )
 ORDER BY concept_name
-;*/
+;
+
+
+--to find the form
+--pertussis, inactivated, whole cell, combinations with toxoids
+--pertussis, purified antigen, combinations with toxoids
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'pertus|Bord|B\. p|B\.p|Pertactin|Fimbriae|Filamentous'
+                                             AND concept_name !~* 'Human Sputum\, Bordetella Pertussis Infected'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'diphthe|tetan|Coryne|Corine|C\.d|C\. d|C\.t|C\. t|Clostrid|Klostrid'
+                                             AND concept_name !~* ('dioscorine|collagenase Clostridium histolyticum|Clostridium botulinum|Clostridium perfringens|clostridium butyricum|Clostridium difficile|Cefotetan|Neisseria meningitidis|' ||
+                                                                'Streptococcus pneumoniae|Diphtherial respiratory pseudomembrane preparation|gonadotropin releasing factor analog-diphtheria toxoid conjugate|' ||
+                                                                'Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine|Diphtheria Antitoxin|Equine diphtheria antitoxin|Tetanus immune globulin')
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('poliovirus vaccine inactivated, type 1 (Mahoney)', 'Hepatitis B Surface Antigen Vaccine', 'Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine',
+                                                                   'influenza B virus antigen', 'Human poliovirus')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+
+--to find the form
+--pertussis, inactivated, whole cell
+--pertussis, purified antigen
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'pertus|Bord|B\. p|B\.p|Pertactin|Fimbriae|Filamentous'
+                                             AND concept_name !~* 'Human Sputum\, Bordetella Pertussis Infected'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('diphtheria toxoid vaccine, inactivated')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+--to find the form
+--meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen
+--meningococcus A,C,Y,W-135, tetravalent purified polysaccharides antigen conjugated
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group c|group B|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group a|group B|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP c|W-135|Group a|group B|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP c|GROUP y|Group a|group B|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('Haemophilus capsular oligosaccharide', 'diphtheria toxoid vaccine, inactivated')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+
+--to find the form
+--meningococcus B, outer membrane vesicle vaccine
+--meningococcus B, multicomponent vaccine
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group c|group A|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('Haemophilus capsular oligosaccharide', 'Influenza A virus vaccine, A-Texas-50-2012 (H3N2)-like virus')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+--to find the form
+--meningococcus C, purified polysaccharides antigen conjugated
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group B|group A|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('Neisseria meningitidis serogroup A capsular polysaccharide diphtheria toxoid protein conjugate vaccine', 'meningococcal group A polysaccharide', 'Diphtheria Antitoxin',
+                                                                   'Haemophilus B Conjugate Vaccine', 'influenza B virus antigen, Hong Kong 330-2001', 'Haemophilus capsular oligosaccharide', 'Neisseria meningitidis serogroup A oligosaccharide diphtheria CRM197 protein conjugate vaccine',
+                                                                   'Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine', 'Neisseria meningitidis serogroup W-135 capsular polysaccharide diphtheria toxoid protein conjugate vaccine',
+                                                                   'Neisseria meningitidis serogroup W-135 oligosaccharide diphtheria CRM197 protein conjugate vaccine')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+--to find the form
+--meningococcus A,C, bivalent purified polysaccharides antigen
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group B|Group C|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+
+        AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group B|Group A|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine', 'influenza B virus antigen, Hong Kong 330-2001', 'Haemophilus capsular oligosaccharide',
+                                                                   'MENINGOCOCCAL POLYSACCHARIDE VACCINE GROUP W-135', 'Haemophilus B Conjugate Vaccine', 'Neisseria meningitidis serogroup W-135 oligosaccharide diphtheria CRM197 protein conjugate vaccine',
+                                                                   'Neisseria meningitidis polysaccharide group Y tetanus toxoid conjugate', 'Neisseria meningitidis serogroup W-135 capsular polysaccharide diphtheria toxoid protein conjugate vaccine')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
+
+
+--to find the form
+--meningococcus A, purified polysaccharides antigen conjugated
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+                                             AND concept_name !~* 'Haemophilus influenzae b|GROUP Y|W-135|Group B|group C|neisseria catarrhalis flava'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('meningococcal group C polysaccharide', 'Neisseria meningitidis polysaccharide group Y tetanus toxoid conjugate', 'Neisseria meningitidis serogroup C oligosaccharide diphtheria CRM197 protein conjugate vaccine',
+                                                                    'Haemophilus capsular oligosaccharide', 'Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine', 'Neisseria meningitidis serogroup C capsular polysaccharide diphtheria toxoid protein conjugate vaccine')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
 
 --to find the form
 --meningococcus A, purified polysaccharides antigen
@@ -1005,7 +1414,7 @@ WHERE c.standard_concept = 'S'
                                              SELECT concept_id, concept_name
                                              FROM devv5.concept
                                              WHERE concept_name ~* 'diphthe|tetan|Coryne|Corine|C\.d|C\. d|C\.t|C\. t|Clostrid|Klostrid'
-                                             AND concept_name !~* 'dioscorine|collagenase Clostridium histolyticum|Clostridium botulinum|Clostridium perfringens|clostridium butyricum|Clostridium difficile|Cefotetan|Neisseria meningitidis|Streptococcus pneumoniae|Diphtherial respiratory pseudomembrane preparation|gonadotropin releasing factor analog-diphtheria toxoid conjugate|Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine'
+                                             AND concept_name !~* 'dioscorine|collagenase Clostridium histolyticum|Clostridium botulinum|Clostridium perfringens|clostridium butyricum|Clostridium difficile|Cefotetan|Neisseria meningitidis|Streptococcus pneumoniae|Diphtherial respiratory pseudomembrane preparation|gonadotropin releasing factor analog-diphtheria toxoid conjugate|Haemophilus influenzae type b\, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine'
                                              AND domain_id = 'Drug'
                                              AND concept_class_id = 'Ingredient'
                                              AND standard_concept = 'S'
