@@ -1577,7 +1577,20 @@ ORDER BY concept_name
 ;
 
 
---july 1st
+--july 2nd
+
+--create atc_july
+create table atc_july
+(atc_code varchar,	atc_name varchar,	comment	varchar,
+concept_id integer,	concept_code varchar,
+concept_name varchar,	concept_class_id	varchar,
+standard_concept varchar,	invalid_reason varchar,	domain_id	varchar,
+vocabulary_id	varchar, ingr_no varchar)
+;
+--drop table
+drop table ATC_july
+;
+
 --all possible relationship types
 SELECT cr.*
 FROM devv5.concept_relationship cr
@@ -1595,19 +1608,26 @@ JOIN devv5.concept c
     AND cr.concept_id_1 = 44120345 --concept_id
 WHERE c.domain_id = 'Drug'
 ;
-
-
 --ATC_brande table creation
 create  table ATC_brands as (select split_part(concept_name, '[', 2) as target_concept_name, a.atc_name
 from dev_vkorsik.atc_july a
-where concept_class_id ~*'branded');
+where concept_class_id ~*'branded')
+;
 --drop table
-drop table ATC_brands;
+drop table ATC_brands
+;
+
+--status of table
+select distinct *
+    from ATC_brands
+;
+
 --branded_drug_forms
 INSERT INTO ATC_brands
 select split_part(concept_name, '[', 2) as target_concept_name
 from dev_vkorsik.atc_july a
-where concept_class_id ~*'branded';
+where concept_class_id ~*'branded'
+;
 --clinical_form
 INSERT INTO ATC_brands
 select distinct split_part(c.concept_name, '[', 2) as target_concept_name,a.atc_name
@@ -1629,13 +1649,17 @@ join devv5.concept c
 on c.concept_id=cr.concept_id_2
 where a.concept_class_id !~*'branded'
 and a.concept_class_id !~*'clinic'
-  and cr.relationship_id='Has brand name'
-and cr.invalid_reason is null;
-
-
-
-
-
+    and cr.relationship_id='Has brand name'
+ and not exists (select 1
+  from  devv5.concept_relationship cr2
+      join devv5.concept c2
+      on cr2.concept_id_2=c2.concept_id
+  where c2.concept_id=c.concept_id
+  group by cr2.concept_id_2
+      having count(distinct c2.concept_id)>1
+      )
+and cr.invalid_reason is null
+;
 
 --check
 SELECT *
