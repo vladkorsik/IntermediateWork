@@ -749,7 +749,7 @@ SELECT DISTINCT cr.relationship_id, c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 44120345 --concept_id
+    AND cr.concept_id_1 = 35140555 --concept_id
 
 WHERE c.domain_id = 'Drug'
 ;
@@ -761,9 +761,96 @@ WHERE c.domain_id = 'Drug'
 --TODO: check forms mentioned twice
 
 
+--to find the form
+--tuberculosis, live attenuated
+--BCG vaccine (from L03AX Other immunostimulants)
+SELECT concept_id,
+       concept_code,
+       concept_name,
+       concept_class_id,
+       standard_concept,
+       invalid_reason,
+       domain_id,
+       vocabulary_id
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'tuberc|M\. t|M\.t|mycobacterium|bcg|Calmet|Guerin'
+                                             AND concept_name !~* 'Tuberculin|phlei|immunoserum'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
 
 
+--to find the form
+--tetanus toxoid
+--tetanus toxoid, combinations with diphtheria toxoid
+--tetanus toxoid, combinations with tetanus immunoglobulin
+SELECT *
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
 
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'tetan|C\.t|C\. t|Clostrid|Klostrid'
+                                             AND concept_name !~* 'Neisseria meningitidis|butyricum|Cefotetan|histolyticum|difficile|perfringens|botulinum|Haemophilus influenzae|immune globulin'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('acellular pertussis vaccine, inactivated', 'Bordetella pertussis', 'Candida albicans allergenic extract', 'Haemophilus influenzae type b, capsular polysaccharide inactivated tetanus toxoid conjugate vaccine',
+                                                                   'Haemophilus B Conjugate Vaccine', 'influenza B virus antigen', 'influenza B virus antigen, Hong Kong 330-2001', 'Pertussis Vaccine', 'Human poliovirus', 'poliovirus vaccine inactivated, type 1 (Mahoney)',
+                                                                   'Typhoid Vaccine Live Ty21a', 'Haemophilus capsular oligosaccharide', 'Influenza Virus Vaccine, Inactivated A-California-07-2009 X-179A (H1N1) strain', 'meningococcal group C polysaccharide')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
 
 
 --to find the form
