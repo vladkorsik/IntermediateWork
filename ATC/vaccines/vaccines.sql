@@ -749,7 +749,7 @@ SELECT DISTINCT cr.relationship_id, c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 36277121 --concept_id
+    AND cr.concept_id_1 = 40861505 --concept_id
 
 WHERE c.domain_id = 'Drug'
 ;
@@ -759,6 +759,59 @@ WHERE c.domain_id = 'Drug'
 --TODO: check if form is existing in both lists (ATC + corrections)
 --TODO: check if some forms are lost
 --TODO: check forms mentioned twice
+
+
+
+
+
+--to find the form
+--typhoid, oral, live attenuated
+--typhoid, inactivated, whole cell
+--typhoid, purified polysaccharide antigen
+SELECT concept_id,
+       concept_code,
+       concept_name,
+       concept_class_id,
+       standard_concept,
+       invalid_reason,
+       domain_id,
+       vocabulary_id
+FROM devv5.concept c
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
+
+      AND EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name ~* 'typh|Salmone|S\.t|S\. t|S\.e|S\. e'
+                                             AND concept_name !~* 'Chondrodendron Platyphyllum|Paratyph|platyphylla|Styphnolobium|platyphyllos|Typhonium'
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+
+    AND NOT EXISTS  (SELECT 1
+                FROM devv5.concept_relationship cr
+                WHERE cr.concept_id_1 in    (SELECT concept_id FROM (
+                                             SELECT concept_id, concept_name
+                                             FROM devv5.concept
+                                             WHERE concept_name in ('')
+                                             --AND concept_name !~* ''
+                                             AND domain_id = 'Drug'
+                                             AND concept_class_id = 'Ingredient'
+                                             AND standard_concept = 'S'
+                                             ORDER BY concept_name
+                                             ) as a )
+                AND cr.concept_id_2 = c.concept_id
+                )
+ORDER BY concept_name
+;
+
 
 
 --to find the form

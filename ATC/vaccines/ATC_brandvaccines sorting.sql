@@ -1,8 +1,8 @@
 --check
 SELECT *
-FROM dev_vkorsik.atc_google_source a1
+FROM dev_vkorsik.atc_to_rx_rxe_mapping_2019_07_01 a1
 WHERE NOT EXISTS (  SELECT *
-                    FROM dev_vkorsik.atc_google_source a2
+                    FROM dev_vkorsik.atc_to_rx_rxe_mapping_2019_07_01 a2
                     JOIN devv5.concept c
                         ON a2.concept_id = c.concept_id
                             AND c.concept_name = a2.concept_name
@@ -14,15 +14,8 @@ WHERE NOT EXISTS (  SELECT *
  )
 ;
 
---drop table
---drop table atc_google_source;
-
---rename atc_july to atc_google_source
-ALTER TABLE atc_july
-    RENAME TO atc_google_source;
-
---create atc_july
-create table atc_july
+--drop table atc_to_rx_rxe_mapping_2019_07_01;
+create table atc_to_rx_rxe_mapping_2019_07_01
 (
     atc_code         varchar,
     atc_name         varchar,
@@ -48,7 +41,7 @@ create table atc_july
 create table ATC_brands as (select distinct a.atc_code,
                                             a.atc_name,
                                             c.concept_name as target_concept_name
-                            from dev_vkorsik.atc_google_source a
+                            from dev_vkorsik.atc_to_rx_rxe_mapping_2019_07_01 a
                                      join devv5.concept_relationship cr
                                           on a.concept_id = cr.concept_id_1
                                      join devv5.concept c
@@ -64,7 +57,7 @@ select distinct a.atc_code,
                 a.atc_name,
                 c2.concept_name as target_concept_name
 
-from dev_vkorsik.atc_google_source a
+from dev_vkorsik.atc_to_rx_rxe_mapping_2019_07_01 a
 
          join devv5.concept_relationship cr
               on a.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Has tradename' AND cr.invalid_reason IS NULL
@@ -88,7 +81,7 @@ select distinct a.atc_code,
                 a.atc_name,
                 c2.concept_name as target_concept_name
 
-from dev_vkorsik.atc_google_source a
+from dev_vkorsik.atc_to_rx_rxe_mapping_2019_07_01 a
 
          join devv5.concept_relationship cr0
               on a.concept_id = cr0.concept_id_1 AND cr0.relationship_id = 'RxNorm ing of' AND cr0.invalid_reason IS NULL
@@ -148,24 +141,40 @@ ORDER BY count DESC, target_concept_name;*/
 drop table atc_brandlist_count;
 
 create table atc_brandlist_count as(
-select ab.target_concept_name as target_brand, ab.atc_name,ab.atc_code,
+select ab.target_concept_name as target_brand,
+       ab.atc_name,
+       ab.atc_code,
        count(distinct c3.concept_id) as count
 from ATC_brands ab
+
          join devv5.concept c
-              on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))=trim (lower(regexp_replace(c.concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))and c.concept_class_id = 'Brand Name'
+              on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g'))) = trim (lower(regexp_replace(c.concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))and c.concept_class_id = 'Brand Name'
+
          join devv5.concept_relationship cr
-              on c.concept_id = cr.concept_id_1
+              on c.concept_id = cr.concept_id_1 and cr.relationship_id = 'Brand name of' and cr.invalid_reason is null
+
          join devv5.concept c2
-              on cr.concept_id_2 = c2.concept_id and cr.relationship_id = 'Brand name of' and
-                 c2.concept_class_id = 'Branded Drug Form' AND c2.standard_concept = 'S' and c2.invalid_reason is null   and cr.invalid_reason is null
+              on cr.concept_id_2 = c2.concept_id and c2.concept_class_id = 'Branded Drug Form' AND c2.standard_concept = 'S'
+
          join devv5.concept_relationship cr2
-              on c2.concept_id = cr2.concept_id_1 and cr2.relationship_id = 'Tradename of' and
-                 cr2.invalid_reason is null
+              on c2.concept_id = cr2.concept_id_1 and cr2.relationship_id = 'Tradename of' and cr2.invalid_reason is null
+
          join devv5.concept c3
-              on cr2.concept_id_2 = c3.concept_id and c3.concept_class_id = 'Clinical Drug Form' and
-                 c3.standard_concept = 'S' and c3.invalid_reason is null
+              on cr2.concept_id_2 = c3.concept_id and c3.concept_class_id = 'Clinical Drug Form' and c3.standard_concept = 'S'
+
+WHERE c3.concept_id in (
+    SELECT c.concept_id
+    FROM atc_to_rx_rxe_mapping_2019_07_01 s
+
+        JOIN devv5.concept_relationship cr
+            ON s.concept_id = cr.concept_id_1 AND cr.invalid_reason IS NULL
+
+        JOIN devv5.concept c
+            ON cr.concept_id_2 = c.concept_id AND c.concept_class_id = 'Clinical Drug Form' AND c.standard_concept = 'S')
+
 group by target_brand, ab.atc_name, ab.atc_code
 order by count desc, target_brand desc);
+
 
 --status of resulting table
 select * from atc_brandlist_count
