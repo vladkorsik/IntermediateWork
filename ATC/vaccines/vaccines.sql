@@ -749,7 +749,7 @@ SELECT DISTINCT cr.relationship_id, c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 35140555 --concept_id
+    AND cr.concept_id_1 = 36277121 --concept_id
 
 WHERE c.domain_id = 'Drug'
 ;
