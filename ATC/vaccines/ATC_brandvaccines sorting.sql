@@ -1,5 +1,25 @@
+--check
+SELECT *
+FROM dev_vkorsik.atc_google_source a1
+WHERE NOT EXISTS (  SELECT *
+                    FROM dev_vkorsik.atc_google_source a2
+                    JOIN devv5.concept c
+                        ON a2.concept_id = c.concept_id
+                            AND c.concept_name = a2.concept_name
+                            AND c.vocabulary_id = a2.vocabulary_id
+                            AND c.domain_id = a2.domain_id
+                            AND c.standard_concept='S'
+                            AND c.invalid_reason is NULL
+                    WHERE a1.atc_code = a2.atc_code
+ )
+;
+
 --drop table
---drop table ATC_july;
+--drop table atc_google_source;
+
+--rename atc_july to atc_google_source
+ALTER TABLE atc_july
+    RENAME TO atc_google_source;
 
 --create atc_july
 create table atc_july
@@ -28,7 +48,7 @@ create table atc_july
 create table ATC_brands as (select distinct a.atc_code,
                                             a.atc_name,
                                             c.concept_name as target_concept_name
-                            from dev_vkorsik.atc_july a
+                            from dev_vkorsik.atc_google_source a
                                      join devv5.concept_relationship cr
                                           on a.concept_id = cr.concept_id_1
                                      join devv5.concept c
@@ -44,7 +64,7 @@ select distinct a.atc_code,
                 a.atc_name,
                 c2.concept_name as target_concept_name
 
-from dev_vkorsik.atc_july a
+from dev_vkorsik.atc_google_source a
 
          join devv5.concept_relationship cr
               on a.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Has tradename' AND cr.invalid_reason IS NULL
@@ -68,7 +88,7 @@ select distinct a.atc_code,
                 a.atc_name,
                 c2.concept_name as target_concept_name
 
-from dev_vkorsik.atc_july a
+from dev_vkorsik.atc_google_source a
 
          join devv5.concept_relationship cr0
               on a.concept_id = cr0.concept_id_1 AND cr0.relationship_id = 'RxNorm ing of' AND cr0.invalid_reason IS NULL
@@ -89,29 +109,67 @@ from dev_vkorsik.atc_july a
 
 where a.concept_class_id = 'Ingredient'
 
-  and not exists (select 1
+/*  and not exists (select 1
                  from devv5.concept_relationship cr4
                           join devv5.concept c4
                                on cr4.concept_id_2 = c4.concept_id AND cr4.invalid_reason IS NULL AND c4.concept_class_id = 'Ingredient' AND c4.standard_concept = 'S' AND cr4.relationship_id = 'RxNorm has ing'
                  where c0.concept_id = cr4.concept_id_1
                  group by cr4.concept_id_1
                  having count(distinct cr4.concept_id_2) > 1
-    )
+    )*/
 ;
 
 
 
 
---TODO: form the list what brand-names are affected by
---TODO просмотреть списокна предмет других символов
---TODO объеденияемы брэнл-неймы оценить
+--form the list what brand-names are affected by
+--find symbols  demarcating parts of Brand-name list in ARC_brands - NOTHING new
+--analyze "fused" brand-names
+
 --status of table
-select distinct trim (lower(regexp_replace(target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))
-    from ATC_brands;
+select distinct * from ATC_brands
+
+--Corrected name field
+select distinct ab.*
+    from ATC_brands ab
+join ATC_brands ab2
+    on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))= trim (lower(regexp_replace(ab2.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))
+where ab.target_concept_name!=ab2.target_concept_name
+order by ab.target_concept_name desc;
 
 
 
---TODO их нужно расставить по каунтам (сколько данный брэнд-нэйм имеет вадидных ссылок (через валиндные ссылки br dr form) на клин драг форм стандартные)
-SELECT DISTINCT target_concept_name, atc_code, atc_name, 0 as count
+
+-- Count distinct Cl dr forms linked to Brand-Name, with valid and standard relations and concepts
+/*SELECT DISTINCT target_concept_name, atc_code, atc_name, 0 as count
 FROM ATC_brands
-ORDER BY count DESC, target_concept_name;
+ORDER BY count DESC, target_concept_name;*/
+
+drop table atc_brandlist_count;
+
+create table atc_brandlist_count as(
+select ab.target_concept_name as target_brand, ab.atc_name,ab.atc_code,
+       count(distinct c3.concept_id) as count
+from ATC_brands ab
+         join devv5.concept c
+              on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))=trim (lower(regexp_replace(c.concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))and c.concept_class_id = 'Brand Name'
+         join devv5.concept_relationship cr
+              on c.concept_id = cr.concept_id_1
+         join devv5.concept c2
+              on cr.concept_id_2 = c2.concept_id and cr.relationship_id = 'Brand name of' and
+                 c2.concept_class_id = 'Branded Drug Form' AND c2.standard_concept = 'S' and c2.invalid_reason is null   and cr.invalid_reason is null
+         join devv5.concept_relationship cr2
+              on c2.concept_id = cr2.concept_id_1 and cr2.relationship_id = 'Tradename of' and
+                 cr2.invalid_reason is null
+         join devv5.concept c3
+              on cr2.concept_id_2 = c3.concept_id and c3.concept_class_id = 'Clinical Drug Form' and
+                 c3.standard_concept = 'S' and c3.invalid_reason is null
+group by target_brand, ab.atc_name, ab.atc_code
+order by count desc, target_brand desc);
+
+--status of resulting table
+select * from atc_brandlist_count
+order by count desc, target_brand;
+
+
+
