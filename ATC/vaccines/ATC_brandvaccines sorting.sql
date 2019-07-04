@@ -134,7 +134,8 @@ select distinct ab.*
     from ATC_brands ab
 join ATC_brands ab2
     on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))= trim (lower(regexp_replace(ab2.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))
-where ab.target_concept_name!=ab2.target_concept_name;
+where ab.target_concept_name!=ab2.target_concept_name
+order by ab.target_concept_name desc;
 
 
 
@@ -144,18 +145,19 @@ where ab.target_concept_name!=ab2.target_concept_name;
 FROM ATC_brands
 ORDER BY count DESC, target_concept_name;*/
 
+drop table atc_brandlist_count;
+
 create table atc_brandlist_count as(
-select trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g'))) as target_brand, ab.atc_name,ab.atc_code,
+select ab.target_concept_name as target_brand, ab.atc_name,ab.atc_code,
        count(distinct c3.concept_id) as count
 from ATC_brands ab
          join devv5.concept c
-              on c.concept_name = ab.target_concept_name and c.concept_class_id = 'Brand Name'
+              on trim (lower(regexp_replace(ab.target_concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))=trim (lower(regexp_replace(c.concept_name, '\.|\-|\\|\/|\*|\,| ', '', 'g')))and c.concept_class_id = 'Brand Name'
          join devv5.concept_relationship cr
               on c.concept_id = cr.concept_id_1
          join devv5.concept c2
               on cr.concept_id_2 = c2.concept_id and cr.relationship_id = 'Brand name of' and
-                 c2.concept_class_id = 'Branded Drug Form' AND c2.standard_concept = 'S' and c2.invalid_reason is null
-    and cr.invalid_reason is null
+                 c2.concept_class_id = 'Branded Drug Form' AND c2.standard_concept = 'S' and c2.invalid_reason is null   and cr.invalid_reason is null
          join devv5.concept_relationship cr2
               on c2.concept_id = cr2.concept_id_1 and cr2.relationship_id = 'Tradename of' and
                  cr2.invalid_reason is null
@@ -165,6 +167,9 @@ from ATC_brands ab
 group by target_brand, ab.atc_name, ab.atc_code
 order by count desc, target_brand desc);
 
-select * from atc_brandlist_count;
+--status of resulting table
+select * from atc_brandlist_count
+order by count desc, target_brand;
+
 
 
