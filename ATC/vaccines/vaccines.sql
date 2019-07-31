@@ -1,7 +1,6 @@
 --The SQL code for ATC vaccines treatment and mapping
---SET SCHEMA 'dev_atc';
---SET search_path TO dev_atc;
-
+SET SCHEMA 'dev_atc';
+SET search_path TO dev_atc;
 
 
 --Split of vaccines into self sufficient ingredients:
@@ -435,55 +434,42 @@ WHERE c.vocabulary_id = 'ATC' AND c.concept_name not ILIKE '%insu%'
 
 
 
-
-
---https://www.whocc.no/atc_ddd_index/
 --retrieving of all the vaccines from atc_drugs_scraper
 SELECT *
 FROM atc_drugs_scraper
-WHERE length(atc_code) = 7 AND
-   atc_code ~* '^J07'
+WHERE length(atc_code) < 7 AND
+   atc_code ~* '^J06|^J07'
 ORDER BY atc_code;
 
 
---ATC map to RxNorm Forms or Brand Drug Form (на разные вариации)
-
---ATC site - уточняют что именно
-
---7 символов (ролители не нужны, но проерить верно ли они замапплены)
-
 --what is already mapped
-select DISTINCT atc_code
+select *
 FROM final_assembly
 WHERE length(atc_code) = 7 AND
    atc_code ~* '^J07'
 --AND concept_class_id = 'Clinical Drug Form'
-
 ;
 
---what is already mapped
-select DISTINCT class_code
+--what is really already mapped
+select *
 FROM class_to_rx_descendant
 WHERE length(class_code) = 7 AND
-   class_code ~* '^J07'
+   class_code ~* '^J06|^J07'
 --AND concept_class_id = 'Clinical Drug Form'
 ;
 
-
-
-
+--what is not mapped manually
 SELECT DISTINCT atc_code, atc_name
 FROM atc_drugs_scraper
 WHERE length(atc_code) = 7 AND
-   atc_code ~* '^J06'
-
+   atc_code ~* '^J06|^J07'
 
 EXCEPT
 
 select DISTINCT atc_code, atc_name
 FROM manual_split
 WHERE length(atc_code) = 7 AND
-   atc_code ~* '^J06'
+   atc_code ~* '^J06|^J07'
 
 ORDER BY atc_code
 ;
@@ -494,24 +480,9 @@ FROM relationship_to_concept_preliminary
 ;
 
 
-SELECT DISTINCT cr.relationship_id
-FROM devv5.concept_relationship cr
-
-JOIN devv5.concept c
-ON cr.concept_id_1 = c.concept_id
-
-WHERE c.vocabulary_id in ('RxNorm', 'RxNorm Extension')
-;
-
-select *
-FROM devv5.vocabulary
-;
 
 
-
-
-
---for google docs monos select (19 mono)
+--mapping of mono-ingredient vaccines
 SELECT /*m.atc_code, m.atc_name, c.concept_id,c.concept_code,
        c.concept_name, c.concept_class_id, c.standard_concept,
        c.invalid_reason,c.domain_id, c.vocabulary_id*/
@@ -617,81 +588,509 @@ where exists(
 
 
 
---check Clinical Drug Forms associated with name
-SELECT DISTINCT c.*
+--DROP TABLE vaccines_atc_to_Rx_RxE;
+CREATE TABLE vaccines_atc_to_Rx_RxE (
+    atc_code varchar,
+    atc_name varchar,
+    comments varchar,
+    concept_id int,
+    concept_code varchar,
+    concept_name varchar,
+    concept_class_id varchar,
+    standard_concept varchar,
+    invalid_reason varchar,
+    domain_id varchar,
+    vocabulary_id varchar
+) WITH OIDS;
+
+SELECT *
+FROM vaccines_atc_to_Rx_RxE;
+
+
+--DROP TABLE vaccines_mistakes;
+CREATE TABLE vaccines_mistakes (
+    comments varchar,
+    concept_id int,
+    concept_code varchar,
+    concept_name varchar,
+    concept_class_id varchar,
+    standard_concept varchar,
+    invalid_reason varchar,
+    domain_id varchar,
+    vocabulary_id varchar
+) WITH OIDS;
+
+SELECT *
+FROM vaccines_mistakes;
+
+--TODO Check if both tables have correct concept_id
+SELECT *
+FROM vaccines_atc_to_Rx_RxE j1
+WHERE NOT EXISTS (  SELECT *
+                    FROM vaccines_atc_to_Rx_RxE j2
+                    JOIN devv5.concept c
+                        ON j2.concept_id = c.concept_id
+                            AND c.concept_name = j2.concept_name
+                            AND c.vocabulary_id = j2.vocabulary_id
+                            AND c.domain_id = j2.domain_id
+                            AND c.standard_concept = 'S'
+                            AND c.invalid_reason is NULL
+                    WHERE j1.OID = j2.OID
+                  );
+
+SELECT *
+FROM vaccines_mistakes j1
+WHERE NOT EXISTS (  SELECT *
+                    FROM vaccines_mistakes j2
+                    JOIN devv5.concept c
+                        ON j2.concept_id = c.concept_id
+                            AND c.concept_name = j2.concept_name
+                            AND c.vocabulary_id = j2.vocabulary_id
+                            AND c.domain_id = j2.domain_id
+                            AND c.standard_concept = 'S'
+                            AND c.invalid_reason is NULL
+                    WHERE j1.OID = j2.OID
+                  );
+
+--TODO: check if concept is existing in both lists (ATC + corrections)
+SELECT concept_id
+FROM vaccines_atc_to_Rx_RxE t1
+WHERE EXISTS (
+    SELECT 1
+    FROM vaccines_mistakes t2
+    WHERE t1.concept_id = t2.concept_id);
+
+--TODO: check concepts mentioned twice
+SELECT *
+FROM vaccines_atc_to_Rx_RxE t1
+WHERE concept_id != 0
+    AND
+    concept_id in (
+    SELECT concept_id
+    FROM vaccines_atc_to_Rx_RxE t2
+    GROUP BY concept_id
+    HAVING COUNT (*) > 1
+    );
+
+SELECT *
+FROM vaccines_mistakes t1
+WHERE concept_id != 0
+    AND
+    concept_id in (
+    SELECT concept_id
+    FROM vaccines_mistakes t2
+    GROUP BY concept_id
+    HAVING COUNT (*) > 1
+    );
+
+--TODO Check whether all ATC J06-07 are mapped
+SELECT DISTINCT atc_code
+FROM atc_drugs_scraper
+WHERE length(atc_code) = 7 AND
+   atc_code ~* '^J06|^J07'
+
+EXCEPT
+
+SELECT DISTINCT atc_code
+FROM vaccines_atc_to_Rx_RxE;
+
+
+
+--TODO: check if some forms are lost
+--DROP TABLE vaccine_all_possible_ingredients;
+CREATE TABLE vaccine_all_possible_ingredients as (
+
+--influenza
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'influenza|Grippe|Orthomyxov|flu$'
+AND concept_name !~* 'Haemophilus'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--rubella
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'rubella|RuV|Rubiv|Togav'
+AND concept_name !~* 'extract|balsam|Peruvoside|Pyruvate|Peruvianum|Phenylpyruvic|Phenylpyruvic|Physalis|Pyruvaldehyde'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--mumps
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'mumps|rubulavirus'
+AND concept_name !~* 'skin'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--measles
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'measles|morbilliv|morbiliv|MeV'
+AND concept_name !~* 'amenamevir|mevalonolactone'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--poliomyelitis
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'polio|Enterovi'
+--AND concept_name !~* ''
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--diphtheria
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'dipht|Coryne|Corine|C\.d|C\. d'
+AND concept_name !~* 'Neisseria meningitidis serogroup|Streptococcus pneumoniae serotype|dioscorine|gonadotropin releasing factor|Diphtherial respiratory pseudomembrane preparation|Antitoxin'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--tetanus
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'tetan|C\.t|C\. t|Clostrid|Klostrid'
+AND concept_name !~* 'Neisseria meningitidis|butyricum|Cefotetan|histolyticum|difficile|perfringens|botulinum|Haemophilus influenzae'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--pertussis
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'pertus|Bord|B\. p|B\.p|Pertactin|Fimbriae|Filamentous'
+AND concept_name !~* 'Human Sputum\, Bordetella Pertussis Infected'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--hepatitis B
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'hepat|HBV|Orthohepad|Hepadn'
+AND concept_name !~* 'Anemone|oscillococcinum|Hepatitis A|NOSODES|Hepatitis C'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--hemophilus influenzae B
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'hemophilus|haemophilus|influenz| hib|hib |H\.inf|H\. inf'
+AND concept_name !~* 'virus|tipepidine hibenzate|Influenzinum for homeopathic preparations'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+
+UNION ALL
+
+--Neisseria
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'mening|N\.m|N\. m|Neis'
+AND concept_name !~* 'Haemophilus influenzae b|neisseria catarrhalis flava'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--rabies
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'rabies|rhabdo|rabdo|lyssav'
+--AND concept_name !~* 'globulin|SERUM'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--papillomavirus
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'papilloma|HPV'
+--AND concept_name !~* ''
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--smallpox
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'smallpox|small-pox|Variola|Poxv|Orthopoxv'
+--AND concept_name !~* ''
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--yellow fever
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'Yellow Fever|Yellow-Fever|Flaviv'
+--AND concept_name !~* ''
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--varicella/zoster
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'varicel|zoster|herpes|chickenpox|VZV|HHV|chicken-pox'
+AND concept_name !~* 'herpesvirus (6|5|1|2)|marina'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--rota virus
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'rotav|Reov'
+AND concept_name !~* 'drotaverin'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--hepatitis A
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'hepat|HAV'
+AND concept_name !~* 'hepatitis B|Hepatitis C|ethaverine|Anemone Hepatica|oscillococcinum|root|NOSODES'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--typhoid
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'typh|Salmone|S\.t|S\. t|S\.e|S\. e'
+AND concept_name !~* 'Chondrodendron Platyphyllum|platyphylla|Styphnolobium|platyphyllos|Typhonium|enteritidis'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--encephalitis
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'encephalitis|tick|Flaviv|Japanese'
+AND concept_name !~* 'Antivenom|extract'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--typhus exanthematicus
+SELECT concept_id FROM (
+SELECT concept_id, concept_name, vocabulary_id
+FROM devv5.concept
+WHERE concept_name ~* 'typhus|exanthematicus|Rickettsia|prowaz|R\.p|R\. p|Orientia|tsutsug|O\.t|O\. t|R\. ty|R\. ty|felis|typhi|R\. f|R\. f'
+AND concept_name !~* 'extract|Salmonella|ty-2|rickettsii|Vi|catus'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--tuberculosis
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'tuberc|M\. t|M\.t|mycobacterium|bcg|Calmet|Guerin'
+AND concept_name !~* 'Tuberculin|phlei'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--pneumococcus
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'pneumo|S\.pn|S\. pn'
+AND concept_name !~* 'Klebsiella pneumoniae|Legionella pneumophila|Mycoplasma pneumoniae'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--plague
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'plague|Yersinia|Y\.p|Y\. p'
+AND concept_name !~* 'Yersinia enterocolitica'
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+) as a
+
+UNION ALL
+
+--cholera
+SELECT concept_id FROM (
+SELECT concept_id, concept_name
+FROM devv5.concept
+WHERE concept_name ~* 'choler|Vibri|V\.c|V\. c'
+--AND concept_name !~* ''
+AND domain_id = 'Drug'
+AND concept_class_id = 'Ingredient'
+AND standard_concept = 'S'
+ORDER BY concept_name
+) as a
+);
+
+SELECT *
+FROM vaccine_all_possible_ingredients;
+
+
+SELECT concept_id,
+       concept_code,
+       concept_name,
+       concept_class_id,
+       standard_concept,
+       invalid_reason,
+       domain_id,
+       vocabulary_id
 FROM devv5.concept c
-WHERE c.domain_id = 'Drug'
-  AND c.standard_concept = 'S'
-  AND c.concept_class_id = 'Clinical Drug Form'
+WHERE c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    AND c.concept_class_id = 'Clinical Drug Form'
 
-AND EXISTS(SELECT 1
-            FROM devv5.concept_relationship cr
-            JOIN devv5.concept c2
-                ON cr.concept_id_2 = c2.concept_id
-                    AND c2.concept_name ~* '\[Infanrix' --name
-            WHERE cr.concept_id_1 = c.concept_id)
-;
+    AND concept_id NOT IN (SELECT concept_id FROM vaccines_atc_to_rx_rxe UNION ALL SELECT concept_id FROM vaccines_mistakes)
 
+    AND EXISTS  (SELECT 1
+                 FROM devv5.concept_relationship cr
+                 WHERE cr.concept_id_1 in (SELECT concept_id FROM vaccine_all_possible_ingredients)
+                 AND cr.concept_id_2 = c.concept_id
+                 )
 
---check Branded Drug Forms associated with concept
-SELECT DISTINCT c.*
-FROM devv5.concept c
-WHERE c.domain_id = 'Drug'
-  AND c.concept_class_id = 'Branded Drug Form'
-
-AND EXISTS(SELECT 1
-            FROM devv5.concept_relationship cr
-            JOIN devv5.concept c2
-                ON cr.concept_id_2 = c2.concept_id
-                    AND c2.concept_id = 41173770 --concept_id
-            WHERE cr.concept_id_1 = c.concept_id)
-;
-
-
---check Clinical Drug Form associated with concept
-SELECT DISTINCT c.*
-FROM devv5.concept c
-WHERE c.domain_id = 'Drug'
-  AND c.concept_class_id = 'Clinical Drug Form'
-
-AND EXISTS(SELECT 1
-            FROM devv5.concept_relationship cr
-            JOIN devv5.concept c2
-                ON cr.concept_id_2 = c2.concept_id
-                    AND c2.concept_id = 40045078 --concept_id
-            WHERE cr.concept_id_1 = c.concept_id)
-;
-
-
-
---all possible relationship types
-SELECT cr.*
-FROM devv5.concept_relationship cr
-JOIN devv5.concept c
-    ON c.concept_id = cr.concept_id_1 AND c.concept_class_id = 'Ingredient' AND c.standard_concept = 'S'
-JOIN devv5.concept cc
-    ON cc.concept_id = cr.concept_id_2 AND cc.concept_class_id = 'Clinical Drug Form' AND cc.standard_concept = 'S'
---WHERE cr.relationship_id = 'RxNorm ing of'
-;
-
-
---all existing relationships for concept
-SELECT DISTINCT cr.relationship_id, cr.invalid_reason, c.*
-FROM devv5.concept_relationship cr
-JOIN devv5.concept c
-    ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 43275054 --concept_id
-
-WHERE c.domain_id = 'Drug'
+ORDER BY concept_name
 ;
 
 
 
 --TODO: check if ingredients having no forms are lost in mapping
---TODO: check if form is existing in both lists (ATC + corrections)
---TODO: check if some forms are lost
---TODO: check forms mentioned twice
---START
+SELECT concept_id,
+       concept_code,
+       concept_name,
+       concept_class_id,
+       standard_concept,
+       invalid_reason,
+       domain_id,
+       vocabulary_id
+FROM devv5.concept c
+WHERE c.concept_id in (SELECT * FROM vaccine_all_possible_ingredients)
+  AND c.concept_id NOT IN (SELECT concept_id FROM vaccines_atc_to_rx_rxe UNION ALL SELECT concept_id FROM vaccines_mistakes)
+
+    AND NOT EXISTS  (SELECT 1
+                    FROM devv5.concept_relationship cr
+                    JOIN devv5.concept cc
+                    ON cr.concept_id_1 = cc.concept_id AND cc.concept_class_id = 'Clinical Drug Form'
+
+                    WHERE c.concept_id = cr.concept_id_2
+                        AND cr.invalid_reason IS NULL
+                    )
+ORDER BY concept_name
+;
+
+
+
+
+
+
 
 --to find the form
 --influenza, inactivated, whole virus
@@ -2169,7 +2568,7 @@ ORDER BY concept_name
 
 
 --to find the form
---yellow fever, live attenuated
+--smallpox, live attenuated
 SELECT concept_id,
        concept_code,
        concept_name,
@@ -3627,4 +4026,85 @@ WHERE c.standard_concept = 'S'
                 AND cr.concept_id_2 = c.concept_id
                 )
 ORDER BY concept_name
+;
+
+
+--all existing relationships for concept in CR
+SELECT DISTINCT cr.*, c.*
+FROM devv5.concept_relationship cr
+JOIN devv5.concept c
+    ON cr.concept_id_2 = c.concept_id
+    AND cr.concept_id_1 = 35603020  --concept_id
+
+WHERE c.domain_id = 'Drug'
+ORDER BY concept_class_id
+;
+
+
+--all existing relationships for concept in CA
+SELECT DISTINCT ca.*, c.*
+FROM devv5.concept_ancestor ca
+JOIN devv5.concept c
+    ON ca.ancestor_concept_id = c.concept_id
+    AND ca.descendant_concept_id = 43201907  --concept_id
+
+WHERE c.domain_id = 'Drug'
+ORDER BY concept_class_id
+;
+
+--check Clinical Drug Forms associated with name
+SELECT DISTINCT c.*
+FROM devv5.concept c
+WHERE c.domain_id = 'Drug'
+  AND c.standard_concept = 'S'
+  AND c.concept_class_id = 'Clinical Drug Form'
+
+AND EXISTS(SELECT 1
+            FROM devv5.concept_relationship cr
+            JOIN devv5.concept c2
+                ON cr.concept_id_2 = c2.concept_id
+                    AND c2.concept_name ~* '\[Infanrix' --name
+            WHERE cr.concept_id_1 = c.concept_id)
+;
+
+
+--check Branded Drug Forms associated with concept
+SELECT DISTINCT c.*
+FROM devv5.concept c
+WHERE c.domain_id = 'Drug'
+  AND c.concept_class_id = 'Branded Drug Form'
+
+AND EXISTS(SELECT 1
+            FROM devv5.concept_relationship cr
+            JOIN devv5.concept c2
+                ON cr.concept_id_2 = c2.concept_id
+                    AND c2.concept_id = 41173770 --concept_id
+            WHERE cr.concept_id_1 = c.concept_id)
+;
+
+
+--check Clinical Drug Form associated with concept
+SELECT DISTINCT c.*
+FROM devv5.concept c
+WHERE c.domain_id = 'Drug'
+  AND c.concept_class_id = 'Clinical Drug Form'
+
+AND EXISTS(SELECT 1
+            FROM devv5.concept_relationship cr
+            JOIN devv5.concept c2
+                ON cr.concept_id_2 = c2.concept_id
+                    AND c2.concept_id = 40045078 --concept_id
+            WHERE cr.concept_id_1 = c.concept_id)
+;
+
+
+
+--all possible relationship types
+SELECT cr.*
+FROM devv5.concept_relationship cr
+JOIN devv5.concept c
+    ON c.concept_id = cr.concept_id_1 AND c.concept_class_id = 'Ingredient' AND c.standard_concept = 'S'
+JOIN devv5.concept cc
+    ON cc.concept_id = cr.concept_id_2 AND cc.concept_class_id = 'Clinical Drug Form' AND cc.standard_concept = 'S'
+--WHERE cr.relationship_id = 'RxNorm ing of'
 ;
