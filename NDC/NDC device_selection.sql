@@ -1,15 +1,68 @@
+--TODO Get made them Devices (exist just in concept table, not in source. Need to use manual change https://github.com/OHDSI/Vocabulary-v5.0/tree/master/working/manual_changes)
+/*UPDATE concept
+SET concept_class_id = 'Device',
+    domain_id = 'Device',
+    standard_concept = 'S'
+WHERE concept_code in ('000199602', '00019N602', '000199601', '065174461', '00019N601')
+    AND vocabulary_id = 'NDC'
+;*/
+
+
+--TODO: to check non-drugs here: https://github.com/OHDSI/Vocabulary-v5.0/issues/31
+
+--TODO: and here: http://forums.ohdsi.org/t/ndc-codes-with-letters/1142
+
+--TODO: add parenteral nutrition:
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 50 MG/ML / Soybean Oil 50 MG/ML Injectable Suspension [Liposyn II]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II 20 %]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II 20 %]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II 20 %]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn III 10 %]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II 20 %]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 50 MG/ML / Soybean Oil 50 MG/ML Injectable Suspension [Liposyn II]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 50 MG/ML / Soybean Oil 50 MG/ML Injectable Suspension [Liposyn II]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Safflower Oil 100 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn II]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn III]
+--EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn III]
+
+--TODO: Add:
+--SOD METABISULFITE
+--'device' pattern
+
+--TODO CHeck drugs here:
+SELECT *
+FROM NDC_manual_mapped m
+
+WHERE
+      target_concept_id != 'device'
+      AND source_concept_id IN (SELECT concept_id FROM ndc_non_drugs);
+
+
+--ToDO Check Devices were NOT recornized by script:
+SELECT *
+FROM NDC_manual_mapped m
+
+WHERE
+      target_concept_id = 'device'
+      AND source_concept_id NOT IN (SELECT concept_id FROM ndc_non_drugs)
+;
+
+
+
 --Reference
 --https://naturallysavvy.com/care/beware-your-antiperspirant-is-a-drug/
 --https://www.fda.gov/Drugs/ResourcesForYou/Consumers/BuyingUsingMedicineSafely/UnderstandingOver-the-CounterMedicines/ucm239463.htm
 
-DROP TABLE IF EXISTS NDC_source;
+
+
+--DROP TABLE IF EXISTS NDC_source;
 CREATE TABLE NDC_source as (
 select * from devv5.concept
 where vocabulary_id = 'NDC'
 AND not exists
 (select 1 from devv5.concept_relationship cr where concept_id_1 = concept_id and relationship_id = 'Maps to' and cr.invalid_reason is null)
-)
-;
+);
 
 
 --START
@@ -18,16 +71,17 @@ CREATE TABLE NDC_remains as (SELECT * FROM NDC_source)
 ;
 
 DROP TABLE IF EXISTS NDC_non_drugs;
-CREATE TABLE NDC_non_drugs as (SELECT * FROM NDC_source WHERE FALSE)
+CREATE TABLE NDC_non_drugs (LIKE NDC_source)
 ;
 
 DROP TABLE IF EXISTS NDC_drugs;
-CREATE TABLE NDC_drugs as (SELECT * FROM NDC_source WHERE FALSE)
+CREATE TABLE NDC_drugs (LIKE NDC_source)
 ;
 
+--TODO: check if we need this
 --Excluding mapping done manually
-DELETE FROM NDC_remains
-WHERE concept_id in (SELECT concept_id FROM dalex.NDC_manual)
+--DELETE FROM NDC_remains
+--WHERE concept_id in (SELECT concept_id FROM dalex.NDC_manual)
 ;
 
 --0
@@ -595,7 +649,7 @@ INSERT INTO NDC_non_drugs
 SELECT *
 FROM NDC_remains
     where concept_name ~* 'TRIATH|ILLIARY|ADJUST|AUGMENTAT|CLOSE| CORD | ENDO |SIZE|FEMORA|FEED|BREAST|TIBIA|INSERT|GASTR|KNEE|ˆSSD|ˆSU|ˆTUBE| CTA |POST'
-and concept_name !~* 'allantoin|breast care|candida|coxsackie|thymus|Gastrograffin|serotonin|Pentagastrin|thyro(x|id)'
+and concept_name !~* 'allantoin|breast care|candida|coxsackie|thymus|serotonin|Pentagastrin|thyro(x|id)'
 ;
 
 --Code for DRUGS
@@ -603,7 +657,7 @@ INSERT INTO NDC_drugs
 SELECT *
 FROM NDC_remains
     where concept_name ~* 'TRIATH|ILLIARY|ADJUST|AUGMENTAT|CLOSE| CORD | ENDO |SIZE|FEMORA|FEED|BREAST|TIBIA|INSERT|GASTR|KNEE|ˆSSD|ˆSU|ˆTUBE| CTA |POST'
-and concept_name ~* 'allantoin|breast care|candida|coxsackie|thymus|Gastrograffin|serotonin|Pentagastrin|thyro(x|id)'
+and concept_name ~* 'allantoin|breast care|candida|coxsackie|thymus|serotonin|Pentagastrin|thyro(x|id)'
 ;
 
 DELETE FROM NDC_remains
@@ -717,25 +771,28 @@ DELETE FROM NDC_remains
 WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_id from NDC_non_drugs)
 ;
 
+--TODO: we exclude if just one component is a device. What if another component is a drug?
+--i.e. Benoxinate 4 MG/ML / Sodium Fluorescein 2.5 MG/ML Ophthalmic Solution [Fluress]
+
+
 --29
 --Code for NON-DRUGS
 INSERT INTO NDC_non_drugs
 SELECT *
 FROM NDC_remains
 where concept_name ~*
-      ('Ethiodol|ethiodized oil|Lipiodol|Lipiodol Ultra-Fluide|Cystografin|diatrizoate|Gastrografin|Hexabrix|' ||
+      ('Ethiodol|ethiodized oil|Lipiodol|Lipiodol Ultra-Fluide|Cystografin|diatrizoate|Gastrografin|Gastrograffin|Hexabrix|' ||
        'ioxaglate|Hypaque|Hypaque|MD-76|MD-Gastroview|Reno-30|Reno-60|Reno-Dip|Renocal|Renografin|Sinografin|' ||
        'iodipamide|Lymphazurin|isosulfan blue|Omniscan|gadodiamide|Eovist|gadoxetate disodium|Dotarem|' ||
        'gadoterate meglumine|Gadavist|gadobutrol|Magnevist|gadopentetate dimeglumine|Ablavar|gadofosveset trisodium|' ||
-       'Feridex|ferumoxides|GastroMARK|ferumoxsil|Multihance|OptiMARK|gadoversetamide|Prohance|gadoteridol|' ||
-       'Teslascan|mangafodipir|Vasovist|AK-Fluor|fluorescein|Angioscein|Fluorescite|IC-Green|indocyanine green|' ||
+       'Feridex|ferumoxides|GastroMARK|ferumoxsil|Multihance|Gadobenate Dimeglumine|OptiMARK|gadoversetamide|Prohance|gadoteridol|' ||
+       'Teslascan|mangafodipir|Vasovist|AK-Fluor|fluorescein|Angioscein|Fluorescite|IC-Green|indocyanine green|IC GREEN|' ||
        'Spy Agent Green|barium sulfate|Readi-Cat|Volumen|Readi-Cat|Anatrast|Bar-Test|Baricon|Baro-Cat|Barobag|' ||
        'Barosperse|CheeTah|Digibar|E-Z-Cat|E-Z-Cat Dry|E-Z-HD|E-Z-Paque|E-Z Disk|E-Z Dose Kit|E-Z Paste|Entero VU|' ||
        'Entrobar|Entroease|Esobar|Esopho-Cat|Flo-Coat|HD 85|HD 200 Plus|Intropaste|Liquid E-Z Paque|Liquid Polibar|' ||
        'Maxibar|Polibar ACB|Polibar Plus|Prepcat|Scan C|SilQ Vanilla|Sitzmarks|Tagitol V|Tomocat|Tonopaque|Varibar|' ||
        'Visipaque (Pro)|iodixanol|Isovue-200|iopamidol|Isovue|iohexol|Omnipaque|Optiray|ioversol|Oraltag|' ||
-       'Oxilan|ioxilan|Ultravist|iopromide|Definity|Optison|perflutren|paque|' ||
-
+       'Oxilan|ioxilan|Ultravist|iopromide|Definity|Optison|perflutren|paque|DEFINITY|' ||
        'filter|terumo|brace|adapt|bottl')
 ;
 
@@ -982,7 +1039,7 @@ FROM NDC_remains
 where concept_name ~* ('F(?=.*18)|Chrom(?=.*51)|Xe(?=.*133)|Iod(?=.*123)|I( 123|-123)|rubidium(?=.*82)|Thall(?=.*201)|' ||
       'Indium|in(?=.*111)|Iod(?=.*125)|I( 125|-125)|Cesium|Tc(?=.*99)|techn|ammonia N(?=.*13)|c-13|NH3')
 and concept_name !~* ('INFLUENZ|cold|multiple|vitamin|cough|Ceftibuten|armodafinil|' ||
-    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine');
+    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN');
 ;
 
 --Code for DRUGS
@@ -992,7 +1049,7 @@ FROM NDC_remains
 where concept_name ~* ('F(?=.*18)|Chrom(?=.*51)|Xe(?=.*133)|Iod(?=.*123)|I( 123|-123)|rubidium(?=.*82)|Thall(?=.*201)|' ||
       'Indium|in(?=.*111)|Iod(?=.*125)|I( 125|-125)|Cesium|Tc(?=.*99)|techn|ammonia N(?=.*13)|c-13|NH3')
 and concept_name ~* ('INFLUENZ|cold|multiple|vitamin|cough|Ceftibuten|armodafinil|' ||
-    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine');
+    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN');
 ;
 
 DELETE FROM NDC_remains
@@ -1004,7 +1061,13 @@ WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_i
 
 --------------------------------------------------
 
-select count (*) from NDC_remains;
+select count (*)
+from NDC_remains;
+
+SELECT *
+FROM NDC_remains
+;
+
 
 --Test for titan in drugs
 SELECT *

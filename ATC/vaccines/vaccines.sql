@@ -4108,3 +4108,32 @@ JOIN devv5.concept cc
     ON cc.concept_id = cr.concept_id_2 AND cc.concept_class_id = 'Clinical Drug Form' AND cc.standard_concept = 'S'
 --WHERE cr.relationship_id = 'RxNorm ing of'
 ;
+
+
+--find relevant vaccine concepts
+SELECT concept_id,
+       concept_code,
+       concept_name,
+       concept_class_id,
+       standard_concept,
+       invalid_reason,
+       domain_id,
+       vocabulary_id
+FROM devv5.concept c
+WHERE
+        EXISTS  (SELECT 1
+                 FROM devv5.concept_ancestor ca
+                 WHERE ca.ancestor_concept_id IN (SELECT concept_id FROM dev_atc.vaccines_atc_to_Rx_RxE)
+                    AND ca.descendant_concept_id = c.concept_id
+                 )
+
+    AND c.standard_concept = 'S'
+    AND c.domain_id = 'Drug'
+    --AND c.concept_class_id IN ('Clinical Drug Form', 'Clinical Drug', 'Branded Drug Form', 'Branded Drug')
+
+
+    AND c.concept_name ilike '%REPEVAX%'
+
+
+ORDER BY concept_name
+;
