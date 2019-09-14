@@ -38,7 +38,8 @@ insert into concept_relationship values(45956707,45956707,'Mapped from',to_date 
 insert into concept_relationship values(45956708,45956708,'Maps to',to_date ('19700101', 'YYYYMMDD'),to_date('20991231', 'YYYYMMDD'),null);
 insert into concept_relationship values(45956708,45956708,'Mapped from',to_date ('19700101', 'YYYYMMDD'),to_date('20991231', 'YYYYMMDD'),null);
 
---Concept synonym
+--Concept synonym added
+
 insert into concept_synonym (concept_id,concept_synonym_name, language_concept_id)
 values (9648, 'Dalton',4180186 )
 insert into concept_synonym (concept_id,concept_synonym_name, language_concept_id)
