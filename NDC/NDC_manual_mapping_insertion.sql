@@ -38,6 +38,7 @@ AND EXISTS (SELECT 1
             AND cc.vocabulary_id = 'RxNorm Extension'
             AND cc.invalid_reason IS NULL);
 
+
 --all existing relationships for concept in CR
 SELECT DISTINCT cr.*, c.*
 FROM devv5.concept_relationship cr
@@ -62,11 +63,13 @@ AND NOT EXISTS( select 1
                 where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
 ;
 
+
 --drug list, including manually mapped
 SELECT *
 FROM dalex.ndc_source
 WHERE concept_id not in (SELECT concept_id FROM dalex.ndc_non_drugs)
 ;
+
 
 --drug list, excluding manually mapped
 SELECT *
@@ -104,30 +107,49 @@ FROM dev_ndc.concept_relationship_manual;
 CREATE TABLE dalex.ndc_concept_relationship_manual_2019_08_27 AS
     (SELECT * FROM dev_ndc.concept_relationship_manual);
 
+--modifications on 2019_08_30
+CREATE TABLE dalex.ndc_concept_relationship_manual_2019_08_30_modifications as (
+    SELECT *
+    FROM dalex.ndc_concept_relationship_manual_2019_09_02
+        EXCEPT
+    SELECT *
+    FROM dalex.ndc_concept_relationship_manual_2019_08_27
+)
+;
 
 --after deprication of wrong mapping
 CREATE TABLE dalex.ndc_concept_relationship_manual_2019_09_02 AS
     (SELECT * FROM dev_ndc.concept_relationship_manual);
 
 
---compare versions
-SELECT *
-FROM dalex.ndc_concept_relationship_manual_2019_09_02
-
-EXCEPT
-
-SELECT *
-FROM dev_ndc.concept_relationship_manual;
+--after deletion, deprication and insertion on 2019-09-16
+CREATE TABLE dalex.ndc_concept_relationship_manual_2019_09_16 AS
+    (SELECT * FROM dev_ndc.concept_relationship_manual);
 
 
+--check the current version of CR_manual
+SELECT a.*, 'front' as schema
+FROM (   SELECT *
+         FROM dalex.ndc_concept_relationship_manual_2019_09_16
 
---REVERT CR_MANUAL
---TRUNCATE TABLE dev_ndc.concept_relationship_manual;
-/*INSERT INTO dev_ndc.concept_relationship_manual
-SELECT *
-FROM dalex.ndc_concept_relationship_manual_2019_09_02;*/
+         EXCEPT
 
+         SELECT *
+         FROM dev_ndc.concept_relationship_manual
+     ) as a
 
+UNION ALL
+
+SELECT b.*, 'back' as schema
+FROM (   SELECT *
+         FROM dev_ndc.concept_relationship_manual
+
+         EXCEPT
+
+         SELECT *
+         FROM dalex.ndc_concept_relationship_manual_2019_09_16
+     ) as b
+;
 
 
 
@@ -289,6 +311,7 @@ CREATE TABLE NDC_manual_mapped (
     source_concept_code varchar(255),
     source_concept_name varchar,
     comments varchar,
+    flag varchar,
     target_concept_id varchar(255),
     target_concept_code varchar(255),
     target_concept_name varchar(255),
@@ -303,10 +326,6 @@ WITH OIDS;
 
 SELECT *
 FROM NDC_manual_mapped;
-
-SELECT *
-FROM prodv5.concept_relationship
-WHERE concept_id_1 = 45222514;
 
 --check if any source code/description are lost
 SELECT *
@@ -327,27 +346,8 @@ WHERE NOT EXISTS(SELECT 1
                  WHERE s.concept_id = m.source_concept_id
                       AND s.concept_code = m.source_concept_code
                       AND s.concept_name = m.source_concept_name
+                      AND s.vocabulary_id = 'NDC'
     );
-
---check what is not in ndc_manual
-SELECT *
-FROM NDC_manual_mapped m
-WHERE NOT EXISTS(SELECT 1
-                 FROM NDC_manual s
-                 WHERE s.concept_id = m.source_concept_id
-                      AND s.concept_code = m.source_concept_code
-                      AND s.concept_name = m.source_concept_name
-    )
-/*AND
-      NOT EXISTS(SELECT 1
-                 FROM NDC_cerner_and_forum_drugs_mapping s
-                 WHERE s.concept_id = m.source_concept_id
-                      AND s.concept_code = m.source_concept_code
-                      AND s.concept_name = m.source_concept_name
-    )*/
-AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
-;
-
 
 --check if target concepts exist in the concept table
 SELECT *
@@ -363,6 +363,22 @@ WHERE NOT EXISTS (  SELECT *
                             AND c.invalid_reason is NULL
                     WHERE j1.OID = j2.OID
                   );
+
+
+
+--at the same time in both lists
+SELECT *
+FROM NDC_manual_mapped m
+WHERE m.flag = 'var'
+     AND EXISTS(SELECT 1
+         FROM NDC_manual_mapped mm
+         WHERE m.flag = 'mand'
+         AND m.source_concept_id = mm.source_concept_id
+          )
+;
+
+
+
 
 
 --1-to-many mapping
@@ -401,15 +417,16 @@ WHERE
       AND source_concept_id NOT IN (SELECT concept_id FROM ndc_non_drugs)
 ;
 
---Mapping count
-SELECT DISTINCT *
-FROM NDC_manual_mapped m
-WHERE target_concept_id != '0'
-    AND target_concept_id != 'device'
-    AND NOT exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null);
 
 
 
+
+--REVERT CR_MANUAL
+/*TRUNCATE TABLE dev_ndc.concept_relationship_manual;
+INSERT INTO dev_ndc.concept_relationship_manual
+SELECT *
+FROM dalex.ndc_concept_relationship_manual_2019_09_02*/
+;
 
 
 
@@ -422,7 +439,7 @@ SET invalid_reason = 'D',
 WHERE concept_code_1 in ('91237000148', '91237000144',
                          '10939082522','40985022731', '11845014957', '43072000746', '40986001651', '11917005315', '41163040347', '11917003949', '52569013434', '10939014433', '49348080130', '58487080031',
                          '11822880370', '10939031944', '48107004972')
-;
+;*/
 
 --Check
 SELECT *
@@ -430,66 +447,108 @@ FROM dev_ndc.concept_relationship_manual
 WHERE concept_code_1 in ('91237000148', '91237000144',
                          '10939082522','40985022731', '11845014957', '43072000746', '40986001651', '11917005315', '41163040347', '11917003949', '52569013434', '10939014433', '49348080130', '58487080031',
                          '11822880370', '10939031944', '48107004972')
-;*/
-
-
---2. mapping insertion
-
---INSERT INTO dev_ndc.concept_relationship_manual
-SELECT DISTINCT m.source_concept_code, c.concept_code, 'NDC', c.vocabulary_id, 'Maps to',
-                CASE WHEN cc.valid_start_date < TO_DATE('19700101', 'YYYYMMDD') THEN TO_DATE('19700101', 'YYYYMMDD') ELSE cc.valid_start_date END,
-                to_date('20991231', 'YYYYMMDD')
-FROM dalex.NDC_manual_mapped m
-
-LEFT JOIN devv5.concept c
-    ON m.target_concept_id = c.concept_id::varchar
-
-LEFT JOIN devv5.concept cc
-    ON m.source_concept_code = cc.concept_code AND cc.vocabulary_id = 'NDC'
-
-WHERE m.target_concept_id != '0' AND m.target_concept_id != 'device' AND c.concept_id IS NOT NULL AND cc.concept_code IS NOT NULL
-AND NOT exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
-
-ORDER BY m.source_concept_code
 ;
 
 
---check of several dates
-SELECT m.source_concept_code, c.concept_code--, 'NDC', c.vocabulary_id, 'Maps to', cc.valid_start_date, to_date('20991231', 'YYYYMMDD')
-FROM NDC_manual_mapped m
-LEFT JOIN devv5.concept c
-    ON m.target_concept_id = c.concept_id::varchar
-LEFT JOIN devv5.concept cc
-    ON m.source_concept_code = cc.concept_code AND cc.vocabulary_id = 'NDC'
-WHERE m.target_concept_id != '0' AND m.target_concept_id != 'device' AND c.concept_id IS NOT NULL AND cc.concept_code IS NOT NULL
-GROUP BY m.source_concept_code, c.concept_code
-HAVING count(*) > 1
+--to deprecate updated mappings
+--2. done
+DELETE FROM dev_ndc.concept_relationship_manual crm
+WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
+AND invalid_reason IS NULL
+AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
+                                                                                                FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
+
+AND NOT EXISTS (SELECT 1 FROM devv5.concept_relationship cr
+                LEFT JOIN devv5.concept c ON cr.concept_id_1 = c.concept_id
+                LEFT JOIN devv5.concept cc ON cr.concept_id_2 = cc.concept_id
+                WHERE crm.concept_code_1 = c.concept_code AND crm.vocabulary_id_1 = c.vocabulary_id
+                    AND crm.concept_code_2 = cc.concept_code AND crm.vocabulary_id_2 = cc.vocabulary_id
+                    AND cr.relationship_id = crm.relationship_id
+                    AND cr.invalid_reason IS NULL
+    )
+;
+
+UPDATE dev_ndc.concept_relationship_manual crm
+SET invalid_reason = 'D',
+    valid_end_date = TO_DATE('20190915', 'YYYYMMDD')
+WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
+AND invalid_reason IS NULL
+AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
+                                                                                                FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
+;
+
+UPDATE dev_ndc.concept_relationship_manual crm
+SET valid_start_date = TO_DATE('20190916', 'YYYYMMDD'),
+    valid_end_date =  to_date('20991231', 'YYYYMMDD')
+WHERE invalid_reason IS NULL
+AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
+                                                                                                FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
 ;
 
 
 
 
+--Check
+SELECT *
+FROM dev_ndc.concept_relationship_manual
+WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
+;
 
 
+
+--3. mapping insertion
+--1426 inserted
+--DROP TABLE dalex.ndc_concept_relationship_manual_2019_09_16_modifications;
+CREATE TABLE dalex.ndc_concept_relationship_manual_2019_09_16_modifications AS (
 with tab as (
     SELECT DISTINCT s.*
-    FROM NDC_manual_mapped s
+    FROM dalex.NDC_manual_mapped s
 )
 
 
-SELECT *, c.concept_name, c.concept_class_id
-FROM dev_ndc.concept_relationship cr
+SELECT DISTINCT m.source_concept_code as concept_code_1,
+                c.concept_code as concept_code_2,
+                cc.vocabulary_id as vocabulary_id_1,
+                c.vocabulary_id as vocabulary_id_2,
+                'Maps to' as relationship_id,
+                --CASE WHEN cc.valid_start_date < TO_DATE('19700101', 'YYYYMMDD') THEN TO_DATE('19700101', 'YYYYMMDD') ELSE cc.valid_start_date END as valid_start_date,
+                TO_DATE('20190916', 'YYYYMMDD') as valid_start_date,
+                to_date('20991231', 'YYYYMMDD') AS valid_end_date,
+                NULL as invalid_reason
+FROM tab m
 
 LEFT JOIN devv5.concept c
-    ON c.concept_id = cr.concept_id_2
+    ON m.target_concept_id = c.concept_id::varchar
+
+LEFT JOIN devv5.concept cc
+    ON m.source_concept_code = cc.concept_code AND cc.vocabulary_id = 'NDC'
+
+WHERE m.target_concept_id != '0' AND m.target_concept_id != 'device' AND c.concept_id IS NOT NULL AND cc.concept_code IS NOT NULL
 
 
+AND (
 
-WHERE cr.concept_id_1 in (
-        SELECT source_concept_id
-        FROM tab
-        GROUP BY source_concept_id
-        HAVING count(*) > 1)
+    (m.flag = 'var' AND NOT exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null))
 
-AND NOT exists (select 1 from devv5.concept_relationship crr where crr.concept_id_1 = cr.concept_id_1 and crr.relationship_id = 'Maps to' and crr.invalid_reason is null)
+    OR
+    (m.flag = 'mand' )
+
+    )
+
+ORDER BY 1,2,3,4,5,6,7,8
+)
 ;
+
+--3.1. Insertion
+--done
+--INSERT INTO dev_ndc.concept_relationship_manual
+SELECT *
+FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications
+WHERE (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (  SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
+                                                                                                    FROM dev_ndc.concept_relationship_manual
+                                                                                                    WHERE invalid_reason IS NULL)
+;
+
+
+
+

@@ -4034,23 +4034,39 @@ SELECT DISTINCT cr.*, c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 35603020  --concept_id
+    AND cr.concept_id_1 = 40149003  --concept_id
 
 WHERE c.domain_id = 'Drug'
 ORDER BY concept_class_id
 ;
 
 
---all existing relationships for concept in CA
+--all existing ancestors for concept in CA
 SELECT DISTINCT ca.*, c.*
 FROM devv5.concept_ancestor ca
 JOIN devv5.concept c
     ON ca.ancestor_concept_id = c.concept_id
-    AND ca.descendant_concept_id = 43201907  --concept_id
+    AND ca.descendant_concept_id = 40173224  --concept_id
 
 WHERE c.domain_id = 'Drug'
 ORDER BY concept_class_id
 ;
+
+--all existing descendants for concept in CA
+SELECT DISTINCT ca.*, c.*
+FROM devv5.concept_ancestor ca
+JOIN devv5.concept c
+    ON ca.descendant_concept_id = c.concept_id
+    AND ca.ancestor_concept_id = 40173224  --concept_id
+
+WHERE c.domain_id = 'Drug'
+ORDER BY concept_class_id
+;
+
+
+
+
+
 
 --check Clinical Drug Forms associated with name
 SELECT DISTINCT c.*
@@ -4111,15 +4127,18 @@ JOIN devv5.concept cc
 
 
 --find relevant vaccine concepts
-SELECT concept_id,
-       concept_code,
-       concept_name,
-       concept_class_id,
-       standard_concept,
-       invalid_reason,
-       domain_id,
-       vocabulary_id
+SELECT DISTINCT c.concept_id,
+       c.concept_code,
+       c.concept_name,
+       c.concept_class_id,
+       c.standard_concept,
+       c.invalid_reason,
+       c.domain_id,
+       c.vocabulary_id
 FROM devv5.concept c
+JOIN devv5.concept_synonym s
+    ON c.concept_id = s.concept_id
+
 WHERE
         EXISTS  (SELECT 1
                  FROM devv5.concept_ancestor ca
@@ -4130,10 +4149,25 @@ WHERE
     AND c.standard_concept = 'S'
     AND c.domain_id = 'Drug'
     --AND c.concept_class_id IN ('Clinical Drug Form', 'Clinical Drug', 'Branded Drug Form', 'Branded Drug')
+    AND c.concept_class_id NOT IN ('Branded Drug Box', 'Marketed Product', 'Quant Branded Box')
 
 
-    AND c.concept_name ilike '%REPEVAX%'
+    AND (c.concept_name ilike '%prevnar%' OR s.concept_synonym_name ilike '%prevnar%')
 
 
-ORDER BY concept_name
+ORDER BY concept_class_id, concept_name
 ;
+
+--all existing relationships for concept in CR
+SELECT DISTINCT c.*
+FROM devv5.concept_relationship cr
+JOIN devv5.concept c
+    ON cr.concept_id_2 = c.concept_id
+    AND cr.concept_id_1 = 40174005  --concept_id
+
+WHERE c.domain_id = 'Drug'
+AND cr.invalid_reason IS NULL
+AND c.vocabulary_id like 'Rx%'
+ORDER BY concept_class_id
+;
+
