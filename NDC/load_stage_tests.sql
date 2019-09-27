@@ -1,192 +1,191 @@
---check mappings to be dropped
-SELECT crs.concept_code_1, c.concept_name, crs.concept_code_2, cc.concept_name
-FROM concept_relationship_stage crs
+--compare concept between schemas
+SELECT a.*, 'devv5' as schema
+FROM (   SELECT *
+         FROM devv5.concept
 
+         EXCEPT
+
+         SELECT *
+         FROM dev_ndc.concept
+     ) as a
+
+UNION ALL
+
+SELECT b.*, 'dev_ndc' as schema
+FROM (   SELECT *
+         FROM dev_ndc.concept
+
+         EXCEPT
+
+         SELECT *
+         FROM devv5.concept
+     ) as b
+;
+
+
+--compare CR between schemas
+SELECT a.concept_id_1, a.concept_id_2, a.relationship_id, a.invalid_reason, 'devv5' as schema, c.vocabulary_id
+FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM devv5.concept_relationship
+
+         EXCEPT
+
+         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM dev_ndc.concept_relationship
+     ) as a
 LEFT JOIN devv5.concept c
-    ON crs.concept_code_1 = c.concept_code AND c.vocabulary_id = 'NDC'
+    ON concept_id_1 = c.concept_id
+
+UNION ALL
+
+SELECT b.concept_id_1, b.concept_id_2, b.relationship_id, b.invalid_reason, 'dev_ndc' as schema, c.vocabulary_id
+FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM dev_ndc.concept_relationship
+
+         EXCEPT
+
+         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM devv5.concept_relationship
+     ) as b
+LEFT JOIN devv5.concept c
+    ON concept_id_1 = c.concept_id
+;
+
+--create temp table
+--DROP TABLE dev_ndc.concept_relationship_tmp;
+CREATE TABLE dev_ndc.concept_relationship_tmp
+as (select * from dev_ndc.concept_relationship);
+
+
+
+--to check mappings are gone
+with gone as (
+SELECT cr.*
+FROM devv5.concept_relationship cr
+
+JOIN devv5.concept c
+    ON cr.concept_id_1 = c.concept_id AND c.vocabulary_id = 'NDC'
+
+JOIN devv5.concept cc
+    ON cr.concept_id_2 = cc.concept_id AND cc.standard_concept = 'S' AND cc.invalid_reason IS NULL
+
+WHERE cr.invalid_reason IS NULL AND cr.relationship_id = 'Maps to'
+
+    AND NOT EXISTS(
+        SELECT 1
+        FROM dev_ndc.concept_relationship cr2
+        WHERE cr2.concept_id_1 = cr.concept_id_1
+            AND cr2.relationship_id = cr.relationship_id
+            AND cr2.invalid_reason IS NULL
+    )
+)
+SELECT * FROM gone
+;
+
+
+
+
+--check if all the mapping was inserted
+--check CR
+SELECT *
+FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications crm
+LEFT JOIN devv5.concept c
+    ON crm.concept_code_1 = c.concept_code AND crm.vocabulary_id_1 = c.vocabulary_id
 
 LEFT JOIN devv5.concept cc
-    ON crs.concept_code_2 = cc.concept_code AND cc.vocabulary_id like 'RxNorm%'
+    ON crm.concept_code_2 = cc.concept_code AND crm.vocabulary_id_2 = cc.vocabulary_id
 
+WHERE NOT EXISTS    (
+    SELECT 1
+    FROM dev_ndc.concept_relationship cr
+    WHERE cr.concept_id_1 = c.concept_id AND
+          cr.concept_id_2 = cc.concept_id AND
+          crm.relationship_id = cr.relationship_id AND
+          cr.invalid_reason IS NULL
+    )
 
-
-WHERE crs.invalid_reason IS NULL
-AND
-concept_code_1 IN (SELECT r.concept_code_1
-FROM concept_relationship_stage r
-WHERE r.relationship_id = 'Maps to'
-	AND r.invalid_reason IS NULL
-	AND r.vocabulary_id_1 = 'NDC'
-	AND r.vocabulary_id_2 = 'RxNorm'
-	AND concept_code_1 IN (
-		--get all duplicate NDC mappings to packs
-		SELECT concept_code_1
-		FROM concept_relationship_stage r_int
-		WHERE r_int.relationship_id = 'Maps to'
-			AND r_int.invalid_reason IS NULL
-			AND r_int.vocabulary_id_1 = 'NDC'
-			AND r_int.vocabulary_id_2 = 'RxNorm'
-		GROUP BY concept_code_1
-		HAVING count(*) > 1
-		)
-	AND concept_code_2 NOT IN (
-		--exclude 'true' mappings [Branded->Clinical]
-		SELECT c_int.concept_code
-		FROM concept_relationship_stage r_int,
-			concept c_int
-		WHERE r_int.relationship_id = 'Maps to'
-			AND r_int.invalid_reason IS NULL
-			AND r_int.vocabulary_id_1 = r.vocabulary_id_1
-			AND r_int.vocabulary_id_2 = r.vocabulary_id_2
-			AND c_int.concept_code = r_int.concept_code_2
-			AND c_int.vocabulary_id = r_int.vocabulary_id_2
-			AND r_int.concept_code_1 = r.concept_code_1
-		ORDER BY c_int.invalid_reason NULLS FIRST,
-			CASE c_int.concept_class_id
-				WHEN 'Branded Pack'
-					THEN 1
-				WHEN 'Clinical Pack'
-					THEN 2
-				WHEN 'Quant Branded Drug'
-					THEN 3
-				WHEN 'Quant Clinical Drug'
-					THEN 4
-				WHEN 'Branded Drug'
-					THEN 5
-				WHEN 'Clinical Drug'
-					THEN 6
-				ELSE 7
-				END,
-			c_int.valid_start_date DESC,
-			c_int.concept_id
-			LIMIT 1
-		))
-
+AND NOT EXISTS(
+    SELECT 1
+    FROM dev_ndc.concept_relationship crr
+    WHERE crr.concept_id_1 = c.concept_id AND
+          crm.relationship_id = crr.relationship_id AND
+          crr.invalid_reason IS NULL
+    )
 ;
 
-
---searching of 1-to-many mappings
---Check mapping added to cr_stage
-with tab as (
-    SELECT DISTINCT s.*
-    FROM dalex.NDC_manual_mapped s
-)
-
-
-SELECT *, c.concept_name, c.concept_class_id
-FROM dev_ndc.concept_relationship_stage crs
-
+--check if all the mapping was inserted
+--check CR_stage
+SELECT *
+FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications crm
 LEFT JOIN devv5.concept c
-    ON c.concept_id = crs.concept_id_2
+    ON crm.concept_code_1 = c.concept_code AND crm.vocabulary_id_1 = c.vocabulary_id
 
-
-
-WHERE crs.concept_code_1 in (
-        SELECT source_concept_code
-        FROM tab
-        GROUP BY source_concept_code
-        HAVING count(*) > 1)
-
-AND NOT exists (select 1 from devv5.concept_relationship crr where crr.concept_id_1 = crs.concept_id_1 and crr.relationship_id = 'Maps to' and crr.invalid_reason is null)
+WHERE NOT EXISTS    (
+    SELECT 1
+    FROM dev_ndc.concept_relationship_stage cr
+    WHERE cr.concept_code_1 = crm.concept_code_1 AND
+          cr.concept_code_2 = crm.concept_code_2 AND
+          cr.vocabulary_id_1 = crm.vocabulary_id_1 AND
+          cr.vocabulary_id_2 = crm.vocabulary_id_2 AND
+          crm.relationship_id = cr.relationship_id AND
+          cr.invalid_reason IS NULL
+    )
+AND NOT EXISTS(
+    SELECT 1
+    FROM dev_ndc.concept_relationship crr
+    WHERE crr.concept_id_1 = c.concept_id AND
+          crm.relationship_id = crr.relationship_id AND
+          crr.invalid_reason IS NULL
+    )
 ;
 
-
---searching of 1-to-many mappings
---Check mapping added to cr
-with tab as (
-    SELECT DISTINCT s.*
-    FROM dalex.NDC_manual_mapped s
-)
-
-
-SELECT *, c.concept_name, c.concept_class_id
+--check if 1-to-many mapping originates only from CR_manual
+SELECT *
 FROM dev_ndc.concept_relationship cr
-
-LEFT JOIN devv5.concept c
-    ON c.concept_id = cr.concept_id_2
-
-
-
-WHERE cr.concept_id_1 in (
-        SELECT source_concept_id
-        FROM tab
-        GROUP BY source_concept_id
-        HAVING count(*) = 1)
-
-AND NOT exists (select 1 from devv5.concept_relationship crr where crr.concept_id_1 = cr.concept_id_1 and crr.relationship_id = 'Maps to' and crr.invalid_reason is null)
-;
-
-
-
-
-
-
-
-
-
-
-SELECT *
-FROM prodv5.concept_relationship
-WHERE concept_id_1 = 45359210;
-
-SELECT *
-FROM prodv5ё.concept
-WHERE concept_id IN (
-19037485,
-19078242,
-40220493
-
+WHERE concept_id_1 IN (
+    SELECT concept_id_1
+    FROM dev_ndc.concept_relationship crr
+    JOIN devv5.concept c
+        ON crr.concept_id_1 = c.concept_id
+            AND c.vocabulary_id = 'NDC'
+    WHERE crr.invalid_reason IS NULL
+        AND crr.relationship_id = 'Maps to'
+    GROUP BY concept_id_1
+    HAVING COUNT(*) > 1
     )
+AND cr.invalid_reason IS NULL
+AND NOT EXISTS (SELECT 1
+                FROM dev_ndc.concept_relationship_manual crm
+                LEFT JOIN devv5.concept cc ON crm.concept_code_1 = cc.concept_code AND crm.vocabulary_id_1 = cc.vocabulary_id
+                LEFT JOIN devv5.concept ccc ON crm.concept_code_2 = ccc.concept_code AND crm.vocabulary_id_2 = ccc.vocabulary_id
+                WHERE cr.concept_id_1 = cc.concept_id
+                    AND cr.concept_id_2 = ccc.concept_id
+                    AND cr.relationship_id = crm.relationship_id
+                    AND crm.invalid_reason IS NULL
+        )
 ;
 
 
 
 
 SELECT *
-FROM devv5.concept_relationship
-WHERE concept_id_1 = 45359210;
-
-
-SELECT *
-FROM devv5.concept
-WHERE concept_id IN (
-19037485,
-19078242,
-40220493
-
-    )
-;
-
-
+FROM concept_relationship_manual;
 
 
 
 SELECT *
-FROM devv5.concept_relationship
-WHERE concept_id_1 = 45222514
-;
+FROM dev_ndc.concept_relationship_manual
+WHERE concept_code_1 = '54569650500';
 
 SELECT *
-FROM prodv5.concept_relationship
-WHERE concept_id_1 = 45222514
-;
-
-
-CREATE TABLE dev_ndc.concept_relationship_old AS
-    (SELECT *
-     FROM dev_ndc.concept_relationship)
-;
-
-
-
-
-
-SELECT *
-FROM dev_ndc.concept_relationship_old
-
-EXCEPT
+FROM dev_ndc.concept_relationship_stage
+WHERE concept_code_1 = '54569650500';
 
 SELECT *
 FROM dev_ndc.concept_relationship
+WHERE concept_id_1 = 45013905;
 
+SELECT *
+FROM devv5.concept_relationship
+WHERE concept_id_1 = 45842474;
 
