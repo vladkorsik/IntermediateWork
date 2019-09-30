@@ -24,7 +24,7 @@ values (45956708, 'gram per millimole', 'Unit', 'UCUM', 'Unit', 'S', 'g/mmol', T
 insert into concept (concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason)
 values (45956709, 'dynes-seconds per centimeter to the fifth power', 'Unit', 'UCUM', 'Unit', 'S', 'dyn.sec.cm-5', TO_DATE ('19700101', 'YYYYMMDD'), TO_DATE ('20991231', 'YYYYMMDD'), null);
 insert into concept (concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason)
-values (45956710, '	millimeter mercury column-minutes per liter', 'Unit', 'UCUM', 'Unit', 'S', 'mm[Hg].min.L-1', TO_DATE ('19700101', 'YYYYMMDD'), TO_DATE ('20991231', 'YYYYMMDD'), null);
+values (45956710, 'millimeter mercury column-minutes per liter', 'Unit', 'UCUM', 'Unit', 'S', 'mm[Hg].min.L-1', TO_DATE ('19700101', 'YYYYMMDD'), TO_DATE ('20991231', 'YYYYMMDD'), null);
 
 --Concepr_Relationship
 insert into concept_relationship values(45956702,45956702,'Maps to',to_date ('19700101', 'YYYYMMDD'),to_date('20991231', 'YYYYMMDD'),null);
