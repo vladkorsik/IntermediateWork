@@ -7,9 +7,6 @@ Both files can be found on https://loinc.org/downloads/accessory-files/
 */
 
 --TODO: Should we edit names of Loinc parts to remove unnecessary dots, etc?
---TODO: Populate concept_synonym
---TODO: Check double concept relationship. They exist because Linktype = DetailedModel duplicates Linktype = Primary for cases where there is no detailed info
---TODO: Remove from concept concepts with name '-', etc.
 
 --Run query to recreate devv5 in your schema
 
@@ -45,7 +42,7 @@ CREATE TABLE LOINC_Part (
 SELECT * FROM LOINC_Part;
 
 
---STEP 2: Concept populating
+--STEP 2: Tables populating
 
 --Populating with new attributes that are not already present in CDM, which are everything except Components
 --INSERT INTO concept_stage
@@ -61,10 +58,15 @@ SELECT DISTINCT 0 AS concept_id,
                 NULL AS invalid_reason
 FROM LOINC_Part s
 WHERE s.parttypename != 'COMPONENT'
+AND s.partdisplayname NOT IN ('-', '*')
 AND s.status = 'ACTIVE';
 
---TODO: Create new concept relationship (see file on google sheets)
+--TODO: Create new concept relationships (see file on google sheets)
 --Populating concept_relationships
+
+WITH s AS (SELECT DISTINCT loincnumber, LongCommonName, PartNumber, PartName, PartTypeName FROM Loinc_PartLink)
+
+--INSERT INTO concept_relationship_stage
 SELECT DISTINCT c.concept_id AS concept_id_1,
                 cs.concept_id AS concept_id_2,
                 s.loincnumber AS concept_code_1,
@@ -75,7 +77,7 @@ SELECT DISTINCT c.concept_id AS concept_id_1,
                 '1970-01-01'::date as valid_start_date, --Valid start date should be the date of last update
                 '2099-12-31'::date as valid_end_date,
                 NULL AS invalid_reason
-FROM Loinc_PartLink s
+FROM s
 JOIN devv5.concept c
 ON s.loincnumber = c.concept_code
 JOIN concept_stage cs
@@ -84,6 +86,23 @@ WHERE c.vocabulary_id = 'LOINC'
 AND parttypename != 'COMPONENT'
 ORDER BY concept_id_1;
 
+--Populate concept_synonym
+--for concepts where partdisplayname != partname
+--INSERT INTO concept_synonym_stage
+SELECT DISTINCT cs.concept_id AS synonym_concept_id,
+    s.partname AS synonym_name,
+    s.partnumber AS synonym_concept_code,
+    'LOINC' AS synonym_vocabulary_id,
+    4180186 AS language_concept_id --English language
+FROM LOINC_Part s
+JOIN concept_stage cs
+ON s.partnumber = cs.concept_code
+WHERE s.partdisplayname != s.partname;
+
+
+SELECT DISTINCT language_concept_id, c.* FROM devv5.concept_synonym
+LEFT JOIN devv5.concept c
+on language_concept_id = c.concept_id;
 
 --Check Loinc Parts for future relationship_id
 SELECT * FROM Loinc_PartLink WHERE PartTypeName = 'SCALE'
