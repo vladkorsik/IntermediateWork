@@ -12,6 +12,7 @@ Both files can be found on https://loinc.org/downloads/accessory-files/
 --STEP 1: Additional sources uploading
 
 --DROP TABLE Loinc_PartLink;
+
 CREATE TABLE Loinc_PartLink (
     LoincNumber varchar(255),
     LongCommonName varchar(512),
@@ -148,6 +149,27 @@ ORDER BY LoincNumber;
 
 
 
+SELECT DISTINCT *
+FROM Loinc_PartLink s
+LEFT JOIN sources.loinc_hierarchy lh
+ON s.PartNumber = immediate_parent
+WHERE LinkTypeName = 'Primary'
+AND PartTypeName = 'COMPONENT'
+AND immediate_parent IS NULL;
+
+
+SELECT * FROM Loinc_PartLink s
+WHERE PartNumber NOT IN (SELECT DISTINCT concept_code FROM devv5.concept WHERE vocabulary_id = 'LOINC')
+AND PartTypeName = 'COMPONENT'
+AND LinkTypeName = 'Primary';
+
+
+SELECT DISTINCT *
+FROM Loinc_PartLink s
+WHERE LinkTypeName = 'Primary'
+AND PartTypeName = 'COMPONENT'
+AND s.PartNumber NOT IN (SELECT DISTINCT immediate_parent FROM sources.loinc_hierarchy);
+
 
 
 --ANALYSIS OF COMPONENTS THAT ARE NOT CURRENTLY PRESENT IN CDM
@@ -183,3 +205,21 @@ AND lh.immediate_parent IS NULL
 ;
 
 --RESULT: All CONCEPT WITH HIERARCHY ARE INCLUDED IN CDM
+
+SELECT * FROM sources.loinc_partlink;
+
+SELECT lh.immediate_parent, p.PartTypeName
+FROM sources.loinc_hierarchy lh
+JOIN LOINC_Part p
+ON lh.immediate_parent = p.PartNumber
+WHERE p.Status = 'ACTIVE'
+AND p.parttypename = 'COMPONENT';
+
+--Code to check concepts that has relationship between parts (specify component if needed)
+SELECT immediate_parent, p.PartDisplayName, p.PartTypeName, code, code_text, pp.PartTypeName
+FROM sources.loinc_hierarchy lh
+JOIN LOINC_Part p
+ON lh.immediate_parent = p.PartNumber
+JOIN LOINC_Part pp
+ON code = pp.PartNumber
+WHERE p.Status = 'ACTIVE' AND pp.Status = 'ACTIVE';
