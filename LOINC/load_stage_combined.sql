@@ -349,72 +349,61 @@ SELECT 'Document Ontology' AS concept_name,
 	'2099-12-31' AS valid_end_date,
 	NULL AS invalid_reason;
 
---5. Add LOINC Hierarchy concepts (code ~ '^LP') from a source table of 'sources.loinc_hierarchy' into the CONCEPT_STAGE
-INSERT INTO concept_stage (
-	concept_name,
-	domain_id,
-	vocabulary_id,
-	concept_class_id,
-	standard_concept,
-	concept_code,
-	valid_start_date,
-	valid_end_date,
-	invalid_reason
-	)
-SELECT DISTINCT SUBSTR(code_text, 1, 255) AS concept_name,
-	CASE
-		WHEN (
-				code_text ~* 'directive|^age\s+|lifetime risk|alert|attachment|\s+date|comment|\s+note|consent|identifier|\s+time|\s+number' -- manually defined word patterns indicating the 'Observation' domain
-				OR code_text ~* 'date and time|coding system|interpretation|status|\s+name|\s+report|\s+id$|s+id\s+|version|instruction|known exposure|priority|ordered|available|requested|issued|flowsheet|\s+term'
-				OR code_text ~* 'reported|not yet categorized|performed|risk factor|device|administration|\s+route$|suggestion|recommended|narrative|ICD code|reference'
-				OR code_text ~* 'reviewed|information|intention|^Reason for|^Received|Recommend|provider|subject|summary|time\s+'
-				)
-			AND code_text !~* 'thrombin time|clotting time|bleeding time|clot formation|kaolin activated time|closure time|protein feed time|Recalcification time|reptilase time|russell viper venom time'
-			AND code_text !~* 'implanted device|dosage\.vial|isolate|within lymph node|cancer specimen|tumor|chromosome|inversion|bioavailable'
-			THEN 'Observation' -- AVOF-1579
-		ELSE 'Measurement'
-		END AS domain_id,
-	'LOINC' AS vocabulary_id,
-	'LOINC Hierarchy' AS concept_class_id,
-	'C' AS standart_concept, -- LOINC Hierarchy concepts should be Classification concepts
-	code AS concept_code,
-	TO_DATE('19700101', 'yyyymmdd') AS valid_start_date,
-	TO_DATE('20991231', 'yyyymmdd') AS valid_end_date,
-	NULL AS invalid_reason
-FROM sources.loinc_hierarchy
-WHERE code LIKE 'LP%';-- all LOINC Hierarchy concepts have 'LP' at the beginning of the names
-
-
-
-
---ADD LOINC ATTRIBUTES THAT ARE NOT CURRENTLY PRESENT IN CDM
---TODO: Logic to define Observation and Measurement
-with s AS (SELECT DISTINCT pl.PartNumber, p.PartDisplayName, pl.parttypename
+--5. Add LOINC Parts concepts
+--First part of LOINC parts going from loinc_partlink
+--TODO: Define concept classes we want to use. Possible actions:
+/*
+   1) Define concept classes according to parttypename (there are more than 6 actually)
+   2) Let it be LOINC Hierarchy for concets coming from sources.loinc_hierarchy table and according to parttypename for the rest
+*/
+with s AS (
+SELECT DISTINCT pl.PartNumber, p.PartDisplayName, pl.parttypename, p.status
 FROM sources.loinc_partlink pl
 JOIN sources.loinc_part p
 ON pl.PartNumber = p.PartNumber
 WHERE pl.LinkTypeName IN ('Primary')    --or any other too
   AND pl.PartTypeName IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
 AND pl.PartNumber NOT IN (SELECT DISTINCT concept_code FROM concept_stage WHERE concept_code IS NOT NULL)     --to exclude duplicates inserted during previous load_stage code
+
+    UNION ALL
+
+--The rest is from loinc_hierarchy
+SELECT DISTINCT p.partnumber, p.partdisplayname, p.parttypename, p.status
+FROM sources.loinc_hierarchy lh
+JOIN sources.loinc_part p
+ON lh.code = p.partnumber
+WHERE code LIKE 'LP%'
 )
 
 INSERT INTO concept_stage (concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason)
 SELECT DISTINCT trim(s.PartDisplayName) AS concept_name,
-                'Measurement' AS domain_id,
+                CASE
+		WHEN (
+				PartDisplayName ~* 'directive|^age\s+|lifetime risk|alert|attachment|\s+date|comment|\s+note|consent|identifier|\s+time|\s+number' -- manually defined word patterns indicating the 'Observation' domain
+				OR PartDisplayName ~* 'date and time|coding system|interpretation|status|\s+name|\s+report|\s+id$|s+id\s+|version|instruction|known exposure|priority|ordered|available|requested|issued|flowsheet|\s+term'
+				OR PartDisplayName ~* 'reported|not yet categorized|performed|risk factor|device|administration|\s+route$|suggestion|recommended|narrative|ICD code|reference'
+				OR PartDisplayName ~* 'reviewed|information|intention|^Reason for|^Received|Recommend|provider|subject|summary|time\s+'
+				)
+			AND PartDisplayName !~* 'thrombin time|clotting time|bleeding time|clot formation|kaolin activated time|closure time|protein feed time|Recalcification time|reptilase time|russell viper venom time'
+			AND PartDisplayName !~* 'implanted device|dosage\.vial|isolate|within lymph node|cancer specimen|tumor|chromosome|inversion|bioavailable'
+			THEN 'Observation'
+		ELSE 'Measurement'                              --Implementing the same logic
+		END AS domain_id,
                 'LOINC' AS vocabulary_id,
+--TODO: Add following concept classes for LOINC Parts
                 CASE WHEN s.parttypename = 'SYSTEM' THEN 'LOINC System'
                      WHEN s.parttypename = 'METHOD' THEN 'LOINC Method'
                      WHEN s.parttypename = 'PROPERTY' THEN 'LOINC Property'
                      WHEN s.parttypename = 'TIME' THEN 'LOINC Time'
                      WHEN s.parttypename = 'COMPONENT' THEN 'LOINC Component'
                      WHEN s.parttypename = 'SCALE' THEN 'LOINC Scale'
-                     ELSE 'LOINC Attribute'             --To check, should be 0 rows with this concept_class_id
+                     ELSE 'LOINC Attribute'
                      END AS concept_class_id,
                 'C' AS standard_concept,                --Classification
                 s.PartNumber AS concept_code,
                 '1970-01-01'::date as valid_start_date, --Valid start date should be the date of last update
-                '2099-12-31'::date as valid_end_date,
-                NULL AS invalid_reason
+                CASE WHEN s.status != 'ACTIVE' THEN '2019-12-31'::date ELSE '2099-12-31' END as valid_end_date, --TODO: Fix issue with dates
+                CASE WHEN s.status != 'ACTIVE' THEN 'D' ELSE NULL END AS invalid_reason    --For deprecated concepts
 FROM s
 ;
 
@@ -509,6 +498,8 @@ WHERE concept_code_1 = 'PANEL.H' || chr(38) || 'P' -- '&' = chr(38)
 
 
 --ADD concept_relationships FOR NEW LOINC ATTRIBUTES
+--TODO: Make sure we are able to use SNOMED relationship or new relationship_id required
+--TODO: Maybe add relationships for concepts from loinc_hierarchy table also?
 WITH s AS (SELECT DISTINCT loincnumber, p.PartNumber, p.PartTypeName
            FROM sources.loinc_partlink pl
            JOIN sources.loinc_part p
@@ -1013,7 +1004,9 @@ VALUES
        (2100000002, 'LOINC Scale', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL),
        (2100000003, 'LOINC Time', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL),
        (2100000004, 'LOINC Method', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL),
-       (2100000005, 'LOINC Property', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL);
+       (2100000005, 'LOINC Property', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL),
+       (2100000006, 'LOINC Attribute', 'Metadata', 'Concept Class', 'Concept Class', NULL, 'OMOP generated', '1970-01-01', '2099-12-31', NULL);
+
 
 INSERT INTO concept_class VALUES
 ('LOINC System', 'LOINC System', 2100000000),
@@ -1021,7 +1014,8 @@ INSERT INTO concept_class VALUES
 ('LOINC Scale', 'LOINC Scale', 2100000002),
 ('LOINC Time', 'LOINC Time', 2100000003),
 ('LOINC Method', 'LOINC Method', 2100000004),
-('LOINC Property', 'LOINC Property', 2100000005)
+('LOINC Property', 'LOINC Property', 2100000005),
+('LOINC Attribute', 'LOINC Attribute', 2100000006)
 ;
 
 
