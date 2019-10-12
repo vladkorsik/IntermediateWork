@@ -4136,7 +4136,7 @@ SELECT DISTINCT c.concept_id,
        c.domain_id,
        c.vocabulary_id
 FROM devv5.concept c
-JOIN devv5.concept_synonym s
+LEFT JOIN devv5.concept_synonym s
     ON c.concept_id = s.concept_id
 
 WHERE
@@ -4152,8 +4152,7 @@ WHERE
     AND c.concept_class_id NOT IN ('Branded Drug Box', 'Marketed Product', 'Quant Branded Box')
 
 
-    AND (c.concept_name ilike '%prevnar%' OR s.concept_synonym_name ilike '%prevnar%')
-
+    AND (c.concept_name ilike '%MENJUGATE%' OR s.concept_synonym_name ilike '%MENJUGATE%')
 
 ORDER BY concept_class_id, concept_name
 ;
@@ -4163,7 +4162,7 @@ SELECT DISTINCT c.*
 FROM devv5.concept_relationship cr
 JOIN devv5.concept c
     ON cr.concept_id_2 = c.concept_id
-    AND cr.concept_id_1 = 40174005  --concept_id
+    AND cr.concept_id_1 = 46276200  --concept_id
 
 WHERE c.domain_id = 'Drug'
 AND cr.invalid_reason IS NULL
