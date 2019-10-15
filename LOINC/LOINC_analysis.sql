@@ -72,6 +72,27 @@ AND p.partnumber NOT IN (SELECT DISTINCT pl.partnumber FROM sources.loinc_partli
     AND pl.parttypename IS NOT NULL)
 ;
 
+
+--LOINC codes where additional information is added with non-primary parts
+with a AS (SELECT DISTINCT pl.loincnumber, pl.longcommonname, p.partnumber, p.partdisplayname, p.parttypename, pl.linktypename
+FROM sources.loinc_part p
+JOIN sources.loinc_partlink pl
+ON p.partnumber = pl.partnumber
+WHERE p.parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+AND pl.linktypename != 'Primary'
+AND p.partnumber NOT IN (SELECT DISTINCT pl.partnumber FROM sources.loinc_partlink pl
+    WHERE pl.linktypename = 'Primary'
+    AND pl.parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+    AND pl.parttypename IS NOT NULL))
+
+SELECT pl.loincnumber, pl.longcommonname, pl.partnumber, pl.partname, pl.parttypename, array_agg(pl.linktypename) AS linktypes
+FROM sources.loinc_partlink pl
+WHERE pl.loincnumber IN (SELECT loincnumber FROM a)
+AND pl.parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+GROUP BY pl.loincnumber, pl.longcommonname, pl.partnumber, pl.partname, pl.parttypename
+ORDER BY loincnumber, parttypename
+;
+
 --Также интересно заджойнить loinc_hierarchy и loinc_partlink,  чтобы посмотреть какие закономерности в построении иерархии для loinc parts присутствуют в сорсе
 --Not sure this code will be helpful somehow
 SELECT lh.immediate_parent, p.partdisplayname AS parent_name, p.parttypename, pl.linktypename, lh.code, lh.code_text
@@ -81,3 +102,10 @@ ON lh.immediate_parent = pl.partnumber
 JOIN sources.loinc_part p
 ON lh.immediate_parent = p.partnumber
 ORDER BY lh.immediate_parent;
+
+
+--под диффом я имел ввиду, где будут видны имена тестов, текущие ссылки (в пределах primary) + все дополнительные ссылки
+SELECT loincnumber, longcommonname, partnumber, partname, parttypename, linktypename
+FROM sources.loinc_partlink
+WHERE parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+ORDER BY loincnumber;
