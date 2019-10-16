@@ -1,64 +1,193 @@
---compare concept between schemas
-SELECT a.*, 'devv5' as schema
-FROM (   SELECT *
-         FROM devv5.concept
-
-         EXCEPT
-
-         SELECT *
-         FROM dev_ndc.concept
-     ) as a
-
-UNION ALL
-
-SELECT b.*, 'dev_ndc' as schema
-FROM (   SELECT *
-         FROM dev_ndc.concept
-
-         EXCEPT
-
-         SELECT *
-         FROM devv5.concept
-     ) as b
-;
-
-
---compare CR between schemas
-SELECT a.concept_id_1, a.concept_id_2, a.relationship_id, a.invalid_reason, 'devv5' as schema, c.vocabulary_id
-FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-         FROM devv5.concept_relationship
-
-         EXCEPT
-
-         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-         FROM dev_ndc.concept_relationship
-     ) as a
-LEFT JOIN devv5.concept c
-    ON concept_id_1 = c.concept_id
-
-UNION ALL
-
-SELECT b.concept_id_1, b.concept_id_2, b.relationship_id, b.invalid_reason, 'dev_ndc' as schema, c.vocabulary_id
-FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-         FROM dev_ndc.concept_relationship
-
-         EXCEPT
-
-         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-         FROM devv5.concept_relationship
-     ) as b
-LEFT JOIN devv5.concept c
-    ON concept_id_1 = c.concept_id
-;
-
---create temp table
+--create temp tables
 --DROP TABLE dev_ndc.concept_relationship_tmp;
 CREATE TABLE dev_ndc.concept_relationship_tmp
 as (select * from dev_ndc.concept_relationship);
 
 
+--DROP TABLE dev_ndc.concept_tmp;
+CREATE TABLE dev_ndc.concept_tmp
+as (select * from dev_ndc.concept);
 
---to check mappings are gone
+
+
+
+--compare concept between schemas
+SELECT a.*, 'devv5' as schema
+FROM (   SELECT concept_id,
+                concept_name,
+                domain_id,
+                vocabulary_id,
+                concept_class_id,
+                standard_concept,
+                concept_code,
+                valid_start_date,
+                valid_end_date,
+                invalid_reason
+         FROM devv5.concept
+
+
+         EXCEPT
+
+         SELECT concept_id,
+                concept_name,
+                domain_id,
+                vocabulary_id,
+                concept_class_id,
+                standard_concept,
+                concept_code,
+                valid_start_date,
+                valid_end_date,
+                invalid_reason
+         FROM prodv5.concept
+     ) as a
+
+UNION ALL
+
+SELECT b.*, 'prodv5' as schema
+FROM (   SELECT concept_id,
+                concept_name,
+                domain_id,
+                vocabulary_id,
+                concept_class_id,
+                standard_concept,
+                concept_code,
+                valid_start_date,
+                valid_end_date,
+                invalid_reason
+         FROM prodv5.concept
+
+         EXCEPT
+
+         SELECT concept_id,
+                concept_name,
+                domain_id,
+                vocabulary_id,
+                concept_class_id,
+                standard_concept,
+                concept_code,
+                valid_start_date,
+                valid_end_date,
+                invalid_reason
+         FROM devv5.concept
+     ) as b
+;
+
+
+SELECT *
+FROM devv5.concept
+WHERE concept_id IN (44818378)
+;
+
+
+SELECT *
+FROM devv5.concept_relationship
+WHERE concept_id_1 = 44818378
+;
+
+
+
+--compare CR between schemas
+with a as (
+    SELECT a.concept_id_1,
+           a.concept_id_2,
+           a.relationship_id,
+           a.invalid_reason,
+           a.valid_start_date,
+           a.valid_end_date,
+           'devv5' as schema,
+           c.vocabulary_id
+    FROM (SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+          FROM devv5.concept_relationship
+              EXCEPT
+
+          SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+          FROM dev_ndc.concept_relationship
+         ) as a
+             LEFT JOIN devv5.concept c
+                       ON concept_id_1 = c.concept_id
+
+    UNION ALL
+
+    SELECT b.concept_id_1,
+           b.concept_id_2,
+           b.relationship_id,
+           b.invalid_reason,
+           b.valid_start_date,
+           b.valid_end_date,
+           'dev_ndc' as schema,
+           c.vocabulary_id
+    FROM (SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+          FROM dev_ndc.concept_relationship
+              EXCEPT
+
+          SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+          FROM devv5.concept_relationship
+         ) as b
+             LEFT JOIN devv5.concept c
+                       ON concept_id_1 = c.concept_id
+)
+
+SELECT *
+FROM a
+WHERE relationship_id = 'Maps to'
+;
+
+
+--compare CR_stage between current and tmp
+SELECT a.concept_code_1, a.concept_code_2, a.vocabulary_id_1, a.vocabulary_id_2, a.relationship_id, a.invalid_reason, a.valid_start_date, a.valid_end_date, 'current' as schema, c.vocabulary_id
+FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM concept_relationship_stage
+
+         EXCEPT
+
+         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM concept_relationship_stage_tmp
+     ) as a
+LEFT JOIN devv5.concept c
+    ON concept_code_1 = c.concept_code AND vocabulary_id_1 = c.vocabulary_id
+
+UNION ALL
+
+SELECT b.concept_code_1, b.concept_code_2, b.vocabulary_id_1, b.vocabulary_id_2, b.relationship_id, b.invalid_reason, b.valid_start_date, b.valid_end_date, 'temp' as schema, c.vocabulary_id
+FROM (   SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM concept_relationship_stage_tmp
+
+         EXCEPT
+
+         SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
+         FROM concept_relationship_stage
+     ) as b
+LEFT JOIN devv5.concept c
+    ON concept_code_1 = c.concept_code AND vocabulary_id_1 = c.vocabulary_id
+;
+
+
+
+
+
+SELECT *
+FROM devv5.concept_relationship
+WHERE concept_id_1 = 40177067;
+
+
+SELECT *
+FROM devv5.concept
+WHERE concept_id = 40177067;
+
+
+SELECT *
+FROM dev_ypaulenka.concept c
+WHERE concept_id = 45340431;
+
+
+
+
+
+
+
+
+
+--to check mappings are gone from devv_ndc
 with gone as (
 SELECT cr.*
 FROM devv5.concept_relationship cr
