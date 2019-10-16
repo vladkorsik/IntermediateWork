@@ -11,7 +11,6 @@ show search_path;
 --Use this script to recreate main tables (concept, concept_relationship, concept_synonym etc) without dropping your schema
 --devv5 - static variable;
 
-
 --recreate with default settings (copy from devv5, w/o ancestor, deprecated relationships and synonyms (faster)
 SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5');
 
@@ -24,8 +23,23 @@ SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_concept_ances
 --preserve old concept_ancestor, but it will be ignored if the include_concept_ancestor is set to true
 SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', drop_concept_ancestor=>false);
 
-
 SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_synonyms=>true);
+
+
+
+
+
+--stage tables checks
+--RUN all queries from Vocabulary-v5.0/working/QA_stage_tables.sql
+--All queries should retrieve NULL
+
+
+
+--DRUG stage tables checks
+--RUN all queries from Vocabulary-v5.0/working/drug_stage_tables_QA.sql --All queries should retrieve NULL
+--RUN all queries from Vocabulary-v5.0/working/Drug_stage_QA_optional.sql --All queries should retrieve NULL, but see comment inside
+
+
 
 
 --GenericUpdate; devv5 - static variable
@@ -35,14 +49,24 @@ BEGIN
 END $_$;
 
 
+--basic tables checks
+--RUN all queries from Vocabulary-v5.0/working/CreateNewVocabulary_QA.sql --All queries should retrieve NULL
+
+
+--DRUG basic tables checks
+--RUN all queries from Vocabulary-v5.working/Basic_tables_QA.sql --All queries should retrieve NULL
+
+
 --QA checks
+--should retrieve NULL
 select * from QA_TESTS.GET_CHECKS();
+
+
 
 
 
 --get_summary - changes in tables between dev-schema (current) and devv5/prodv5/any other schema
 --supported tables: concept, concept_relationship, concept_ancestor
-
 
 --first clean cache
 select * from qa_tests.purge_cache();
