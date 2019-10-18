@@ -109,3 +109,179 @@ SELECT loincnumber, longcommonname, partnumber, partname, parttypename, linktype
 FROM sources.loinc_partlink
 WHERE parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
 ORDER BY loincnumber;
+
+
+
+
+TRUNCATE TABLE concept_relationship_stage;
+
+--Запрос Полины
+--INSERT INTO concept_relationship_stage(concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason)
+SELECT DISTINCT x1.partnumber, -- LOINC Ancestor
+                x1.partname,
+                x2.partnumber,
+                x2.partname,
+                'LOINC',
+                'LOINC',
+                'Subsumes',
+                TO_DATE('19700101', 'yyyymmdd'),
+	            TO_DATE('20991231', 'yyyymmdd'),
+                NULL
+FROM sources.loinc_partlink x1
+join sources.loinc_partlink x2 on x1.loincnumber = x2.loincnumber  and x1.parttypename = x2.parttypename
+AND x1.partname <> x2.partname
+WHERE (x2.linktypename = 'Primary' and x1.linktypename = 'DetailedModel')
+or (x2.linktypename = 'Primary' and  x1.linktypename = 'Search' and 'METHOD' in (x1.parttypename,x2.parttypename))
+GROUP BY x1.partnumber, x1.partname, x2.partnumber, x2.partname
+HAVING count(*) = 2
+ORDER BY x1.partnumber
+;
+
+--1-й уровень
+WITH a AS (
+    SELECT concept_code_1, p.partdisplayname, concept_code_2, pp.partdisplayname
+    FROM concept_relationship_stage rs
+             JOIN sources.loinc_part p
+                  ON rs.concept_code_1 = p.partnumber
+             JOIN sources.loinc_part pp
+                  ON rs.concept_code_2 = pp.partnumber
+    WHERE concept_code_1 NOT IN
+          (SELECT DISTINCT concept_code_2 FROM concept_relationship_stage) --Concept without parents
+      AND concept_code_2 NOT IN (SELECT DISTINCT concept_code_1 FROM concept_relationship_stage)
+)
+
+SELECT DISTINCT crr.concept_code_1, a.concept_code_1, CASE WHEN crr.concept_code_1 = a.concept_code_1 THEN 'True' ELSE 'False' END AS relationship
+--родители отличающихся концептов. Сравнить их с concept_code_1 из а.
+--Если совпадают, значит, есть промежуток между concept_code_1 и concept_code_2 и такой relationship нужно удалять
+FROM concept_relationship_stage cr
+JOIN concept_relationship_stage crr
+ON crr.concept_code_2 = cr.concept_code_1
+JOIN a
+ON cr.concept_code_2 = a.concept_code_2
+WHERE (cr.concept_code_1, cr.concept_code_2) NOT IN (SELECT concept_code_1, concept_code_2 FROM a)   --Взяли отличных родителей
+;
+--Затем итеративно взять всех, где родители не совпали и проверить еще раз
+
+
+--2-й уровень
+WITH a AS (
+    SELECT concept_code_1, p.partdisplayname, concept_code_2, pp.partdisplayname
+    FROM concept_relationship_stage rs
+             JOIN sources.loinc_part p
+                  ON rs.concept_code_1 = p.partnumber
+             JOIN sources.loinc_part pp
+                  ON rs.concept_code_2 = pp.partnumber
+    WHERE concept_code_1 NOT IN
+          (SELECT DISTINCT concept_code_2 FROM concept_relationship_stage) --Concept without parents
+      AND concept_code_2 NOT IN (SELECT DISTINCT concept_code_1 FROM concept_relationship_stage)
+)
+
+SELECT DISTINCT crrr.concept_code_1, a.concept_code_1, CASE WHEN crrr.concept_code_1 = a.concept_code_1 THEN 'True' ELSE 'False' END AS relationship
+--родители отличающихся концептов. Сравнить их с concept_code_1 из а.
+--Если совпадают, значит, есть промежуток между concept_code_1 и concept_code_2 и такой relationship нужно удалять
+FROM concept_relationship_stage cr
+JOIN concept_relationship_stage crr
+ON crr.concept_code_2 = cr.concept_code_1
+JOIN concept_relationship_stage crrr
+ON crrr.concept_code_2 = crr.concept_code_1
+JOIN a
+ON cr.concept_code_2 = a.concept_code_2
+WHERE (cr.concept_code_1, cr.concept_code_2) NOT IN (SELECT concept_code_1, concept_code_2 FROM a)   --Взяли отличных родителей
+;
+
+--3-й уровень
+WITH a AS (
+    SELECT concept_code_1, p.partdisplayname, concept_code_2, pp.partdisplayname
+    FROM concept_relationship_stage rs
+             JOIN sources.loinc_part p
+                  ON rs.concept_code_1 = p.partnumber
+             JOIN sources.loinc_part pp
+                  ON rs.concept_code_2 = pp.partnumber
+    WHERE concept_code_1 NOT IN
+          (SELECT DISTINCT concept_code_2 FROM concept_relationship_stage) --Concept without parents
+      AND concept_code_2 NOT IN (SELECT DISTINCT concept_code_1 FROM concept_relationship_stage)
+)
+
+SELECT DISTINCT crrrr.concept_code_1, a.concept_code_1, CASE WHEN crrrr.concept_code_1 = a.concept_code_1 THEN 'True' ELSE 'False' END AS relationship
+--родители отличающихся концептов. Сравнить их с concept_code_1 из а.
+--Если совпадают, значит, есть промежуток между concept_code_1 и concept_code_2 и такой relationship нужно удалять
+FROM concept_relationship_stage cr
+JOIN concept_relationship_stage crr
+ON crr.concept_code_2 = cr.concept_code_1
+JOIN concept_relationship_stage crrr
+ON crrr.concept_code_2 = crr.concept_code_1
+JOIN concept_relationship_stage crrrr
+ON crrrr.concept_code_2 = crrr.concept_code_1
+JOIN a
+ON cr.concept_code_2 = a.concept_code_2
+WHERE (cr.concept_code_1, cr.concept_code_2) NOT IN (SELECT concept_code_1, concept_code_2 FROM a)   --Взяли отличных родителей
+;
+
+--4-й уровень
+WITH a AS (
+    SELECT concept_code_1, p.partdisplayname, concept_code_2, pp.partdisplayname
+    FROM concept_relationship_stage rs
+             JOIN sources.loinc_part p
+                  ON rs.concept_code_1 = p.partnumber
+             JOIN sources.loinc_part pp
+                  ON rs.concept_code_2 = pp.partnumber
+    WHERE concept_code_1 NOT IN
+          (SELECT DISTINCT concept_code_2 FROM concept_relationship_stage) --Concept without parents
+      AND concept_code_2 NOT IN (SELECT DISTINCT concept_code_1 FROM concept_relationship_stage)
+)
+
+SELECT DISTINCT crrrrr.concept_code_1, a.concept_code_1, CASE WHEN crrrrr.concept_code_1 = a.concept_code_1 THEN 'True' ELSE 'False' END AS relationship
+--родители отличающихся концептов. Сравнить их с concept_code_1 из а.
+--Если совпадают, значит, есть промежуток между concept_code_1 и concept_code_2 и такой relationship нужно удалять
+FROM concept_relationship_stage cr
+JOIN concept_relationship_stage crr
+ON crr.concept_code_2 = cr.concept_code_1
+JOIN concept_relationship_stage crrr
+ON crrr.concept_code_2 = crr.concept_code_1
+JOIN concept_relationship_stage crrrr
+ON crrrr.concept_code_2 = crrr.concept_code_1
+JOIN concept_relationship_stage crrrrr
+ON crrrrr.concept_code_2 = crrrr.concept_code_1
+JOIN a
+ON cr.concept_code_2 = a.concept_code_2
+WHERE (cr.concept_code_1, cr.concept_code_2) NOT IN (SELECT concept_code_1, concept_code_2 FROM a)   --Взяли отличных родителей
+;
+
+--Relationships between X->Primary
+SELECT DISTINCT pl.partnumber, pl.partname, pl.parttypename, --pl.linktypename,
+       pll.partnumber, pll.partname, pll.parttypename --pll.linktypename
+FROM sources.loinc_partlink pl
+JOIN sources.loinc_partlink pll
+ON (pl.loincnumber, pl.parttypename) = (pll.loincnumber, pll.parttypename)
+       AND pl.partnumber != pll.partnumber
+WHERE pl.parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+AND pl.linktypename IN ('DetailedModel', 'SyntaxEnhancement', 'Search')
+AND pll.parttypename IN ('SYSTEM', 'METHOD', 'PROPERTY', 'TIME', 'COMPONENT', 'SCALE')
+AND pll.linktypename = 'Primary'
+ORDER BY pl.partnumber
+;
+
+SELECT DISTINCT x1.partnumber AS concept_code_1, -- LOINC Ancestor
+x1.partname AS concept_name_1, 'Subsumes' AS relationship_id,
+	x2.partnumber AS concept_code_2, -- LOINC Descendant
+x2.partname AS concept_name_2
+FROM loinc_partlink x1
+JOIN loinc_partlink x2 ON x1.loincnumber = x2.loincnumber AND x1.parttypename = x2.parttypename
+AND x1.partnumber != x2.partnumber
+WHERE (x2.linktypename = 'Primary' AND x1.linktypename = 'DetailedModel')
+GROUP BY x1.partnumber, x1.partname, x2.partnumber, x2.partname
+;
+
+
+SELECT DISTINCT x1.partnumber AS concept_code_1, -- LOINC Ancestor
+x1.partname AS concept_name_1, 'Subsumes' AS relationship_id,
+	x2.partnumber AS concept_code_2, -- LOINC Descendant
+x2.partname AS concept_name_2
+FROM loinc_partlink x1
+JOIN loinc_partlink x2 ON x1.loincnumber = x2.loincnumber AND x1.parttypename = x2.parttypename
+AND x1.partnumber != x2.partnumber
+WHERE (x2.linktypename = 'Primary' AND x1.linktypename = 'DetailedModel')
+GROUP BY x1.partnumber, x1.partname, x2.partnumber, x2.partname
+HAVING count(x2.partnumber) > 5
+ORDER BY concept_code_1
+;
