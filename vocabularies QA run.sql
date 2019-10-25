@@ -41,6 +41,13 @@ SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_synonyms=>tru
 
 
 
+--for DRUG vocab (if creating RxE for them)
+--Run Build_RxE script. Comment last “drops” block if you plan on using MapDrugVocab.
+--If the source vocabulary does not fulfill quality criteria for RxE, run
+-- script.
+
+
+
 
 --GenericUpdate; devv5 - static variable
 DO $_$

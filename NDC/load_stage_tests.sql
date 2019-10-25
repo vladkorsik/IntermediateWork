@@ -1,13 +1,16 @@
 --create temp tables
---DROP TABLE dev_ndc.concept_relationship_tmp;
-CREATE TABLE dev_ndc.concept_relationship_tmp
-as (select * from dev_ndc.concept_relationship);
 
+--DROP TABLE concept_tmp;
+CREATE TABLE concept_tmp
+as (select * from concept);
 
---DROP TABLE dev_ndc.concept_tmp;
-CREATE TABLE dev_ndc.concept_tmp
-as (select * from dev_ndc.concept);
+--DROP TABLE concept_relationship_tmp;
+CREATE TABLE concept_relationship_tmp
+as (select * from concept_relationship);
 
+--DROP TABLE concept_ancestor_tmp;
+CREATE TABLE concept_ancestor_tmp
+as (select * from concept_ancestor);
 
 
 
@@ -38,12 +41,12 @@ FROM (   SELECT concept_id,
                 valid_start_date,
                 valid_end_date,
                 invalid_reason
-         FROM prodv5.concept
+         FROM concept
      ) as a
 
 UNION ALL
 
-SELECT b.*, 'prodv5' as schema
+SELECT b.*, 'current' as schema
 FROM (   SELECT concept_id,
                 concept_name,
                 domain_id,
@@ -54,7 +57,7 @@ FROM (   SELECT concept_id,
                 valid_start_date,
                 valid_end_date,
                 invalid_reason
-         FROM prodv5.concept
+         FROM concept
 
          EXCEPT
 
@@ -72,20 +75,6 @@ FROM (   SELECT concept_id,
      ) as b
 ;
 
-
-SELECT *
-FROM devv5.concept
-WHERE concept_id IN (44818378)
-;
-
-
-SELECT *
-FROM devv5.concept_relationship
-WHERE concept_id_1 = 44818378
-;
-
-
-
 --compare CR between schemas
 with a as (
     SELECT a.concept_id_1,
@@ -98,10 +87,11 @@ with a as (
            c.vocabulary_id
     FROM (SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
           FROM devv5.concept_relationship
+
               EXCEPT
 
           SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-          FROM dev_ndc.concept_relationship
+          FROM concept_relationship
          ) as a
              LEFT JOIN devv5.concept c
                        ON concept_id_1 = c.concept_id
@@ -114,10 +104,11 @@ with a as (
            b.invalid_reason,
            b.valid_start_date,
            b.valid_end_date,
-           'dev_ndc' as schema,
+           'current' as schema,
            c.vocabulary_id
     FROM (SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-          FROM dev_ndc.concept_relationship
+          FROM concept_relationship
+
               EXCEPT
 
           SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
@@ -129,7 +120,7 @@ with a as (
 
 SELECT *
 FROM a
-WHERE relationship_id = 'Maps to'
+--WHERE a.relationship_id = 'Maps to'
 ;
 
 
@@ -163,30 +154,6 @@ LEFT JOIN devv5.concept c
 
 
 
-
-
-SELECT *
-FROM devv5.concept_relationship
-WHERE concept_id_1 = 40177067;
-
-
-SELECT *
-FROM devv5.concept
-WHERE concept_id = 40177067;
-
-
-SELECT *
-FROM dev_ypaulenka.concept c
-WHERE concept_id = 45340431;
-
-
-
-
-
-
-
-
-
 --to check mappings are gone from devv_ndc
 with gone as (
 SELECT cr.*
@@ -210,8 +177,6 @@ WHERE cr.invalid_reason IS NULL AND cr.relationship_id = 'Maps to'
 )
 SELECT * FROM gone
 ;
-
-
 
 
 --check if all the mapping was inserted
@@ -293,28 +258,3 @@ AND NOT EXISTS (SELECT 1
                     AND crm.invalid_reason IS NULL
         )
 ;
-
-
-
-
-SELECT *
-FROM concept_relationship_manual;
-
-
-
-SELECT *
-FROM dev_ndc.concept_relationship_manual
-WHERE concept_code_1 = '54569650500';
-
-SELECT *
-FROM dev_ndc.concept_relationship_stage
-WHERE concept_code_1 = '54569650500';
-
-SELECT *
-FROM dev_ndc.concept_relationship
-WHERE concept_id_1 = 45013905;
-
-SELECT *
-FROM devv5.concept_relationship
-WHERE concept_id_1 = 45842474;
-
