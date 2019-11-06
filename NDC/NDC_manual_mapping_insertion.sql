@@ -151,7 +151,12 @@ FROM (   SELECT *
      ) as b
 ;
 
-
+--REVERT CR_MANUAL
+/*TRUNCATE TABLE dev_ndc.concept_relationship_manual;
+INSERT INTO dev_ndc.concept_relationship_manual
+SELECT *
+FROM dalex.ndc_concept_relationship_manual_2019_09_02*/
+;
 
 
 
@@ -266,6 +271,8 @@ WHERE TRUE
 ORDER BY c.concept_code, c.concept_name, cc.concept_name
 );
 
+
+
 SELECT DISTINCT *
 FROM NDC_cerner_and_forum_drugs_mapping;
 
@@ -304,6 +311,7 @@ ORDER BY concept_name, concept_code
 SELECT DISTINCT *
 FROM NDC_manual
 ;
+
 
 --DROP TABLE NDC_manual_mapped;
 CREATE TABLE NDC_manual_mapped (
@@ -421,15 +429,6 @@ WHERE
 
 
 
---REVERT CR_MANUAL
-/*TRUNCATE TABLE dev_ndc.concept_relationship_manual;
-INSERT INTO dev_ndc.concept_relationship_manual
-SELECT *
-FROM dalex.ndc_concept_relationship_manual_2019_09_02*/
-;
-
-
-
 --Script to run:
 --to deprecate wrong mappings
 --1. done
@@ -452,7 +451,7 @@ WHERE concept_code_1 in ('91237000148', '91237000144',
 
 --to deprecate updated mappings
 --2. done
-DELETE FROM dev_ndc.concept_relationship_manual crm
+/*DELETE FROM dev_ndc.concept_relationship_manual crm
 WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
 AND invalid_reason IS NULL
 AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
@@ -466,24 +465,24 @@ AND NOT EXISTS (SELECT 1 FROM devv5.concept_relationship cr
                     AND cr.relationship_id = crm.relationship_id
                     AND cr.invalid_reason IS NULL
     )
-;
+;*/
 
-UPDATE dev_ndc.concept_relationship_manual crm
+/*UPDATE dev_ndc.concept_relationship_manual crm
 SET invalid_reason = 'D',
     valid_end_date = TO_DATE('20190915', 'YYYYMMDD')
 WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
 AND invalid_reason IS NULL
 AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
                                                                                                 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
-;
+;*/
 
-UPDATE dev_ndc.concept_relationship_manual crm
+/*UPDATE dev_ndc.concept_relationship_manual crm
 SET valid_start_date = TO_DATE('20190916', 'YYYYMMDD'),
     valid_end_date =  to_date('20991231', 'YYYYMMDD')
 WHERE invalid_reason IS NULL
 AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) IN (SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
                                                                                                 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
-;
+;*/
 
 
 
@@ -526,14 +525,8 @@ LEFT JOIN devv5.concept cc
 WHERE m.target_concept_id != '0' AND m.target_concept_id != 'device' AND c.concept_id IS NOT NULL AND cc.concept_code IS NOT NULL
 
 
-AND (
+AND NOT exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
 
-    (m.flag = 'var' AND NOT exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = m.source_concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null))
-
-    OR
-    (m.flag = 'mand' )
-
-    )
 
 ORDER BY 1,2,3,4,5,6,7,8
 )
@@ -549,6 +542,69 @@ WHERE (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relatio
                                                                                                     WHERE invalid_reason IS NULL)
 ;
 
+
+
+
+
+--List of NDC_manual to be mapped
+SELECT DISTINCT
+                concept_id as source_concept_id,
+                concept_code as source_concept_code,
+                concept_name as source_concept_name
+FROM NDC_manual
+--exclude concepts already in NDC_manual_mapped table
+WHERE concept_id NOT IN (SELECT source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+;
+
+
+
+--check if old D mappings are useful
+--list to be reviewed
+SELECT DISTINCT c.concept_id as source_concept_id,
+                c.concept_code as source_concept_code,
+                c.concept_name as source_concept_name,
+                NULL as comments,
+                ccc.concept_id as target_concept_id,
+                ccc.concept_code as target_concept_code,
+                ccc.concept_name as target_concept_name,
+                ccc.concept_class_id as target_concept_class_id,
+                ccc.standard_concept as target_standard_concept,
+                ccc.invalid_reason as target_invalid_reason,
+                ccc.domain_id as target_domain_id,
+                ccc.vocabulary_id as target_vocabulary_id,
+                regexp_replace(c.concept_name, '^\d*\.*\d*( )*(ML|HR|ACTUAT|MG)*( )*|^\{( )*\d*( )*\(*\d*\.*\d*( )*(ML|HR|ACTUAT|MG)*( )*\)*( )*\(*', '', 'g') as sort
+
+FROM devv5.concept_relationship cr
+
+JOIN devv5.concept c
+    ON cr.concept_id_1 = c.concept_id AND c.vocabulary_id = 'NDC'
+
+JOIN devv5.concept cc
+    ON cr.concept_id_2 = cc.concept_id
+
+JOIN devv5.concept_relationship crr
+    ON cc.concept_id = crr.concept_id_1 AND crr.relationship_id = 'Maps to' AND crr.invalid_reason IS NULL
+
+JOIN devv5.concept ccc
+    ON crr.concept_id_2 = ccc.concept_id AND ccc.standard_concept = 'S'
+
+
+WHERE TRUE
+    AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NOT NULL
+
+--have no valid 'Maps to' mapping currently
+AND NOT EXISTS    (SELECT 1
+                    FROM devv5.concept_relationship crrrr
+                    WHERE   crrrr.concept_id_1 = c.concept_id
+                        AND crrrr.relationship_id = 'Maps to'
+                        AND crrrr.invalid_reason IS NULL)
+
+--exclude concepts already in NDC_manual_mapped table
+AND c.concept_id NOT IN (SELECT source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+ORDER BY regexp_replace(c.concept_name, '^\d*\.*\d*( )*(ML|HR|ACTUAT|MG)*( )*|^\{( )*\d*( )*\(*\d*\.*\d*( )*(ML|HR|ACTUAT|MG)*( )*\)*( )*\(*', '', 'g'),
+         c.concept_code
+;
 
 
 

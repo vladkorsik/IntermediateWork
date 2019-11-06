@@ -15,65 +15,90 @@ as (select * from concept_ancestor);
 
 
 --compare concept between schemas
-SELECT a.*, 'devv5' as schema
-FROM (   SELECT concept_id,
-                concept_name,
-                domain_id,
-                vocabulary_id,
-                concept_class_id,
-                standard_concept,
-                concept_code,
-                valid_start_date,
-                valid_end_date,
-                invalid_reason
-         FROM devv5.concept
+with first as (
+                SELECT a.*, 'devv5' as schema
+                FROM (   SELECT concept_id,
+                                concept_name,
+                                domain_id,
+                                vocabulary_id,
+                                concept_class_id,
+                                standard_concept,
+                                concept_code,
+                                valid_start_date,
+                                valid_end_date,
+                                invalid_reason
+                         FROM devv5.concept
 
 
-         EXCEPT
+                         EXCEPT
 
-         SELECT concept_id,
-                concept_name,
-                domain_id,
-                vocabulary_id,
-                concept_class_id,
-                standard_concept,
-                concept_code,
-                valid_start_date,
-                valid_end_date,
-                invalid_reason
-         FROM concept
-     ) as a
+                         SELECT concept_id,
+                                concept_name,
+                                domain_id,
+                                vocabulary_id,
+                                concept_class_id,
+                                standard_concept,
+                                concept_code,
+                                valid_start_date,
+                                valid_end_date,
+                                invalid_reason
+                         FROM dev_ndc.concept
+                     ) as a ),
 
+second as (
+
+                SELECT b.*, 'dev_ndc' as schema
+                FROM (   SELECT concept_id,
+                                concept_name,
+                                domain_id,
+                                vocabulary_id,
+                                concept_class_id,
+                                standard_concept,
+                                concept_code,
+                                valid_start_date,
+                                valid_end_date,
+                                invalid_reason
+                         FROM dev_ndc.concept
+
+                         EXCEPT
+
+                         SELECT concept_id,
+                                concept_name,
+                                domain_id,
+                                vocabulary_id,
+                                concept_class_id,
+                                standard_concept,
+                                concept_code,
+                                valid_start_date,
+                                valid_end_date,
+                                invalid_reason
+                         FROM devv5.concept
+                     ) as b )
+
+--changed and new concepts
+SELECT * from first
 UNION ALL
+SELECT * from second
 
-SELECT b.*, 'current' as schema
-FROM (   SELECT concept_id,
-                concept_name,
-                domain_id,
-                vocabulary_id,
-                concept_class_id,
-                standard_concept,
-                concept_code,
-                valid_start_date,
-                valid_end_date,
-                invalid_reason
-         FROM concept
 
-         EXCEPT
+--new concepts
+--SELECT * from first
+--WHERE concept_id NOT IN (SELECT concept_id FROM second)
 
-         SELECT concept_id,
-                concept_name,
-                domain_id,
-                vocabulary_id,
-                concept_class_id,
-                standard_concept,
-                concept_code,
-                valid_start_date,
-                valid_end_date,
-                invalid_reason
-         FROM devv5.concept
-     ) as b
+--changed concepts
+--SELECT first.*, devv5.levenshtein(first.concept_name, second.concept_name)
+--from first
+--LEFT JOIN second ON first.concept_id = second.concept_id
+--
+--WHERE first.concept_id IN (SELECT concept_id FROM second)
+--
+--UNION ALL
+--
+--SELECT second.*, devv5.levenshtein(second.concept_name, first.concept_name)
+--from second
+--LEFT JOIN first ON first.concept_id = second.concept_id
 ;
+
 
 --compare CR between schemas
 with a as (
@@ -91,7 +116,7 @@ with a as (
               EXCEPT
 
           SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-          FROM concept_relationship
+          FROM dev_ndc.concept_relationship
          ) as a
              LEFT JOIN devv5.concept c
                        ON concept_id_1 = c.concept_id
@@ -104,10 +129,10 @@ with a as (
            b.invalid_reason,
            b.valid_start_date,
            b.valid_end_date,
-           'current' as schema,
+           'dev_ndc' as schema,
            c.vocabulary_id
     FROM (SELECT *--concept_id_1, concept_id_2, relationship_id, invalid_reason
-          FROM concept_relationship
+          FROM dev_ndc.concept_relationship
 
               EXCEPT
 
@@ -120,7 +145,7 @@ with a as (
 
 SELECT *
 FROM a
---WHERE a.relationship_id = 'Maps to'
+WHERE a.relationship_id = 'Maps to'
 ;
 
 
