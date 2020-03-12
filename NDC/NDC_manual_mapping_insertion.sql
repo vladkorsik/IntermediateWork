@@ -700,6 +700,7 @@ FROM relationship
 
 
 
+
 --2020-02-17
 --NDC_manual_portion5
 --https://github.com/OHDSI/Vocabulary-v5.0/issues/277
@@ -760,10 +761,111 @@ ORDER BY s.row_counts DESC
 
 
 
+--NDC_manual_portion6
+--https://github.com/OHDSI/Vocabulary-v5.0/issues/100#issuecomment-590992058
+
+CREATE TABLE dalex.NDC_manual_portion6 (
+    concept_id int,
+    code varchar(255),
+    concept_name varchar(255),
+    concept_class_id varchar(255),
+    vocabulary_id varchar(255),
+    count int
+) WITH OIDS;
+
+
+--check source consistency
+SELECT s.concept_id,
+       s.code,
+       s.concept_name,
+       s.concept_class_id,
+       s.vocabulary_id,
+       s.count
+FROM dalex.NDC_manual_portion6 s
+
+LEFT JOIN devv5.concept c
+    ON      s.concept_id = c.concept_id
+        AND s.code = c.concept_code
+        --AND s.concept_name = c.concept_name --concept_name was slightly modified for 2 concepts
+        --AND s.concept_class_id = c.concept_class_id --Domain was changed for 16 concepts
+        AND s.vocabulary_id = c.vocabulary_id
+
+WHERE c.concept_id IS NULL
+;
 
 
 
 
+--select for manual mapping
+with source as (
+
+SELECT DISTINCT
+                c.concept_id,
+                c.concept_code,
+                c.concept_name,
+                s.count as row_counts
+                --,cs.concept_synonym_name --empty here
+
+FROM dalex.NDC_manual_portion6 s
+
+JOIN devv5.concept c
+    ON s.code = c.concept_code
+        AND s.concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+
+LEFT JOIN devv5.concept_synonym cs
+    ON c.concept_id = cs.concept_id AND cs.concept_synonym_name != c.concept_name
+
+WHERE c.vocabulary_id = 'NDC'
+
+AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
+
+AND c.concept_id NOT IN (select source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+
+
+--adding part of portion5
+UNION ALL
+
+SELECT DISTINCT
+                c.concept_id,
+                c.concept_code,
+                c.concept_name,
+                s.row_counts
+                --,cs.concept_synonym_name --empty here
+
+FROM dalex.NDC_manual_portion5 s
+
+JOIN devv5.concept c
+    ON s.drug_source_value = c.concept_code
+        AND s.drug_source_concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+
+LEFT JOIN devv5.concept_synonym cs
+    ON c.concept_id = cs.concept_id AND cs.concept_synonym_name != c.concept_name
+
+WHERE c.vocabulary_id = 'NDC'
+
+AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
+
+AND c.concept_id NOT IN (select source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+)
+
+SELECT DISTINCT
+       concept_id,
+       concept_code,
+       concept_name,
+       sum (row_counts) as row_counts
+
+FROM source
+
+GROUP BY concept_id,
+         concept_code,
+         concept_name
+
+ORDER BY sum (row_counts) DESC
+;
 
 
 
@@ -775,6 +877,7 @@ CREATE TABLE dalex.NDC_manual_mapped (
     source_concept_id int,
     source_concept_code varchar(255),
     source_concept_name varchar,
+    source_counts int,
     comments varchar,
     --flag varchar,
     target_concept_id varchar(255),
