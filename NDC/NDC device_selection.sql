@@ -1061,11 +1061,37 @@ WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_i
 
 --------------------------------------------------
 
+--NDC stats:
+
+--total: 923,780
+
+
+--not mapped: 190,330 (20%)
+--drugs: 95,774 (50%)
+--non-drugs: 64,793 (34%)
+--to sort out (drugs, probably): 29,763 (16%)
+
+
+
+SELECT *
+FROM NDC_source;
+
+
+
 select count (*)
 from NDC_remains;
 
+select count (*)
+from NDC_drugs;
+
+select count (*)
+from NDC_non_drugs;
+
+
 SELECT *
 FROM NDC_remains
+ORDER BY random ()
+limit 5000
 ;
 
 
@@ -1198,3 +1224,4 @@ JOIN drugs d
                 HAVING COUNT(*) > 5
               )
 ;
+

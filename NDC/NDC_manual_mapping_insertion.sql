@@ -1,3 +1,56 @@
+--26 000
+SELECT *
+FROM dev_ndc.concept_relationship_manual
+;
+
+--check if current RxNorm and possible RxE MINs solve the NDC problem
+    with all_ndc as (
+    select c1.concept_id as ndc_id,
+           c1.concept_name as ndc_name,
+           array_agg(distinct ds.ingredient_concept_id order by ds.ingredient_concept_id) ndc_arr
+    from concept c1
+    join concept_relationship r on r.concept_id_1 = c1.concept_id and r.invalid_reason is null and r.relationship_id = 'Maps to'
+    join drug_strength ds on ds.drug_concept_id = r.concept_id_2
+    where c1.vocabulary_id = 'NDC'
+    and c1.concept_id in (SELECT DISTINCT c1.concept_id
+                            FROM devv5.concept c1
+
+                                     JOIN devv5.concept_relationship cr1
+                                          ON c1.concept_id = cr1.concept_id_1 AND cr1.relationship_id = 'Maps to' AND cr1.invalid_reason IS NULL
+
+                                     JOIN devv5.concept c2
+                                          ON cr1.concept_id_2 = c2.concept_id AND c2.standard_concept = 'S' AND c2.invalid_reason IS NULL
+
+                            WHERE c1.vocabulary_id = 'NDC'
+
+                            GROUP BY c1.concept_id
+                            HAVING count(DISTINCT c2.concept_id) > 1
+                            ORDER BY c1.concept_id
+        )
+    group by c1.concept_id, c1.concept_name
+    )
+
+    select distinct n.ndc_id, n.ndc_name, c3.concept_id as rx_id, c3.concept_name as rx_name, cl_drugs.form_id, cl_drugs.form_name
+    from all_ndc n
+    join (
+    	select c1.concept_id as form_id,
+    	       c1.concept_name as form_name,
+    	       array_agg(ds.ingredient_concept_id order by ds.ingredient_concept_id) drugs_arr
+        from concept c1
+        join drug_strength ds on ds.drug_concept_id = c1.concept_id
+        where c1.vocabulary_id like 'Rx%'
+        and c1.concept_class_id = 'Clinical Drug Form'
+        group by c1.concept_id, c1.concept_name
+
+    ) cl_drugs on cl_drugs.drugs_arr=n.ndc_arr    join concept_relationship r3 on n.ndc_id = r3.concept_id_1 and r3.invalid_reason is null and r3.relationship_id = 'Maps to'
+    join concept c3 on r3.concept_id_2 = c3.concept_id
+    --where form_id is null
+    order by 1,2,3,4,5,6
+;
+
+
+
+
 --mappings gone somehow
 SELECT *
 FROM devv5.concept_relationship
@@ -127,10 +180,15 @@ CREATE TABLE dalex.ndc_concept_relationship_manual_2019_09_16 AS
     (SELECT * FROM dev_ndc.concept_relationship_manual);
 
 
+--after deprication of wrong mapping 2019_12_05
+CREATE TABLE dalex.ndc_concept_relationship_manual_2019_12_05 AS
+    (SELECT * FROM dev_ndc.concept_relationship_manual);
+
+
 --check the current version of CR_manual
 SELECT a.*, 'front' as schema
 FROM (   SELECT *
-         FROM dalex.ndc_concept_relationship_manual_2019_09_16
+         FROM dalex.ndc_concept_relationship_manual_2019_12_05
 
          EXCEPT
 
@@ -495,6 +553,32 @@ WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationsh
 
 
 
+--to deprecate wrong mappings
+--done
+/*UPDATE dev_ndc.concept_relationship_manual
+SET invalid_reason = 'D',
+    valid_end_date = current_date
+WHERE concept_code_1 in ('63323025410', '87701040161', '10939032544', '59707000155', '08080100008', '52569013481', '30142032910', '68016001173', '11917008790', '52569013475', '91237000100',
+                         '68016001170', '40986002399', '96295011031', '52569013478', '11917012943', '41163023213', '49348073701', '96295011308', '41163023199', '52569013479',
+                         '50428193592', '92896000008', '68016002399', '68016001171', '08080100006', '11822324050', '08080100004', '10939027601'
+    )
+AND vocabulary_id_1 = 'NDC'
+;*/
+
+--Check
+SELECT *
+FROM devv5.concept c
+LEFT JOIN dev_ndc.concept_relationship_manual crm
+ON c.concept_code = crm.concept_code_1
+WHERE c.concept_code in ('63323025410', '87701040161', '10939032544', '59707000155', '08080100008', '52569013481', '30142032910', '68016001173', '11917008790', '52569013475', '91237000100',
+                         '68016001170', '40986002399', '96295011031', '52569013478', '11917012943', '41163023213', '49348073701', '96295011308', '41163023199', '52569013479',
+                         '50428193592', '92896000008', '68016002399', '68016001171', '08080100006', '11822324050', '08080100004', '10939027601'
+    )
+    AND c.vocabulary_id = 'NDC'
+;
+
+
+
 --3. mapping insertion
 --1426 inserted
 --DROP TABLE dalex.ndc_concept_relationship_manual_2019_09_16_modifications;
@@ -558,6 +642,8 @@ WHERE concept_id NOT IN (SELECT source_concept_id FROM dalex.NDC_manual_mapped W
 
 
 
+
+
 --check if old D mappings are useful
 --list to be reviewed
 SELECT DISTINCT c.concept_id as source_concept_id,
@@ -583,14 +669,14 @@ JOIN devv5.concept cc
     ON cr.concept_id_2 = cc.concept_id
 
 JOIN devv5.concept_relationship crr
-    ON cc.concept_id = crr.concept_id_1 AND crr.relationship_id = 'Maps to' AND crr.invalid_reason IS NULL
+    ON cc.concept_id = crr.concept_id_1 AND crr.relationship_id IN ('Maps to', 'RxNorm replaced by', 'Concept replaced by') AND crr.invalid_reason IS NULL
 
 JOIN devv5.concept ccc
     ON crr.concept_id_2 = ccc.concept_id AND ccc.standard_concept = 'S'
 
 
 WHERE TRUE
-    AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NOT NULL
+    AND cr.relationship_id IN ('Maps to', 'RxNorm replaced by', 'Concept replaced by') AND cr.invalid_reason IS NOT NULL
 
 --have no valid 'Maps to' mapping currently
 AND NOT EXISTS    (SELECT 1
@@ -607,4 +693,281 @@ ORDER BY regexp_replace(c.concept_name, '^\d*\.*\d*( )*(ML|HR|ACTUAT|MG)*( )*|^\
 ;
 
 
+SELECT *
+FROM relationship
+;
 
+
+
+
+
+--2020-02-17
+--NDC_manual_portion5
+--https://github.com/OHDSI/Vocabulary-v5.0/issues/277
+
+CREATE TABLE dalex.NDC_manual_portion5 (
+    drug_source_value varchar(255),
+    drug_source_concept_id int,
+    concept_name varchar(255),
+    vocabulary_id varchar(255),
+    concept_class_id varchar(255),
+    standard_concept varchar(255),
+    valid_start_date date,
+    valid_end_date date,
+    invalid_reason varchar(255),
+    row_counts int
+) WITH OIDS;
+
+
+--check source consistency
+SELECT *
+FROM dalex.NDC_manual_portion5 s
+
+LEFT JOIN devv5.concept c
+    ON s.drug_source_value = c.concept_code
+        AND s.drug_source_concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+WHERE c.concept_id IS NULL
+;
+
+
+
+
+--select for manual mapping
+SELECT DISTINCT
+                c.concept_id,
+                c.concept_code,
+                c.concept_name,
+                s.row_counts
+
+FROM dalex.NDC_manual_portion5 s
+
+JOIN devv5.concept c
+    ON s.drug_source_value = c.concept_code
+        AND s.drug_source_concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+
+LEFT JOIN devv5.concept_synonym cs
+    ON c.concept_id = cs.concept_id
+
+WHERE c.vocabulary_id = 'NDC'
+
+AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
+
+AND c.concept_id NOT IN (select source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+ORDER BY s.row_counts DESC
+;
+
+
+
+--NDC_manual_portion6
+--https://github.com/OHDSI/Vocabulary-v5.0/issues/100#issuecomment-590992058
+
+CREATE TABLE dalex.NDC_manual_portion6 (
+    concept_id int,
+    code varchar(255),
+    concept_name varchar(255),
+    concept_class_id varchar(255),
+    vocabulary_id varchar(255),
+    count int
+) WITH OIDS;
+
+
+--check source consistency
+SELECT s.concept_id,
+       s.code,
+       s.concept_name,
+       s.concept_class_id,
+       s.vocabulary_id,
+       s.count
+FROM dalex.NDC_manual_portion6 s
+
+LEFT JOIN devv5.concept c
+    ON      s.concept_id = c.concept_id
+        AND s.code = c.concept_code
+        --AND s.concept_name = c.concept_name --concept_name was slightly modified for 2 concepts
+        --AND s.concept_class_id = c.concept_class_id --Domain was changed for 16 concepts
+        AND s.vocabulary_id = c.vocabulary_id
+
+WHERE c.concept_id IS NULL
+;
+
+
+
+
+--select for manual mapping
+with source as (
+
+SELECT DISTINCT
+                c.concept_id,
+                c.concept_code,
+                c.concept_name,
+                s.count as row_counts
+                --,cs.concept_synonym_name --empty here
+
+FROM dalex.NDC_manual_portion6 s
+
+JOIN devv5.concept c
+    ON s.code = c.concept_code
+        AND s.concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+
+LEFT JOIN devv5.concept_synonym cs
+    ON c.concept_id = cs.concept_id AND cs.concept_synonym_name != c.concept_name
+
+WHERE c.vocabulary_id = 'NDC'
+
+AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
+
+AND c.concept_id NOT IN (select source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+
+
+--adding part of portion5
+UNION ALL
+
+SELECT DISTINCT
+                c.concept_id,
+                c.concept_code,
+                c.concept_name,
+                s.row_counts
+                --,cs.concept_synonym_name --empty here
+
+FROM dalex.NDC_manual_portion5 s
+
+JOIN devv5.concept c
+    ON s.drug_source_value = c.concept_code
+        AND s.drug_source_concept_id = c.concept_id
+        AND s.vocabulary_id = c.vocabulary_id
+
+LEFT JOIN devv5.concept_synonym cs
+    ON c.concept_id = cs.concept_id AND cs.concept_synonym_name != c.concept_name
+
+WHERE c.vocabulary_id = 'NDC'
+
+AND not exists (select 1 from devv5.concept_relationship cr where cr.concept_id_1 = c.concept_id and cr.relationship_id = 'Maps to' and cr.invalid_reason is null)
+
+AND c.concept_id NOT IN (select source_concept_id FROM dalex.NDC_manual_mapped WHERE source_concept_id IS NOT NULL)
+
+)
+
+SELECT DISTINCT
+       concept_id,
+       concept_code,
+       concept_name,
+       sum (row_counts) as row_counts
+
+FROM source
+
+GROUP BY concept_id,
+         concept_code,
+         concept_name
+
+ORDER BY sum (row_counts) DESC
+;
+
+
+
+
+
+
+--DROP TABLE dalex.NDC_manual_mapped;
+CREATE TABLE dalex.NDC_manual_mapped (
+    source_concept_id int,
+    source_concept_code varchar(255),
+    source_concept_name varchar,
+    source_counts int,
+    comments varchar,
+    --flag varchar,
+    target_concept_id varchar(255),
+    target_concept_code varchar(255),
+    target_concept_name varchar(255),
+    target_concept_class_id varchar(255),
+    target_standard_concept varchar(255),
+    target_invalid_reason varchar(255),
+    target_domain_id varchar(255),
+    target_vocabulary_id varchar(255)
+                               )
+WITH OIDS;
+
+
+SELECT *
+FROM NDC_manual_mapped;
+
+
+--check if any source code/description are lost
+SELECT *
+FROM NDC_manual s
+WHERE NOT EXISTS(SELECT 1
+                 FROM NDC_manual_mapped m
+                 WHERE s.concept_id = m.source_concept_id
+                      AND s.concept_code = m.source_concept_code
+                      AND s.concept_name = m.source_concept_name
+
+    );
+
+--check if any source code/description are modified
+SELECT *
+FROM NDC_manual_mapped m
+WHERE NOT EXISTS(SELECT 1
+                 FROM devv5.concept s
+                 WHERE s.concept_id = m.source_concept_id
+                      AND s.concept_code = m.source_concept_code
+                      AND s.concept_name = m.source_concept_name
+                      AND s.vocabulary_id = 'NDC'
+    );
+
+--check if target concepts exist in the concept table
+SELECT *
+FROM NDC_manual_mapped j1
+WHERE NOT EXISTS (  SELECT *
+                    FROM NDC_manual_mapped j2
+                    JOIN devv5.concept c
+                        ON j2.target_concept_id = c.concept_id::varchar
+                            AND c.concept_name = j2.target_concept_name
+                            AND c.vocabulary_id = j2.target_vocabulary_id
+                            AND c.domain_id = j2.target_domain_id
+                            AND c.standard_concept = 'S'
+                            AND c.invalid_reason is NULL
+                    WHERE j1.OID = j2.OID
+                  );
+
+
+
+
+--1-to-many mapping
+with tab as (
+    SELECT DISTINCT s.*
+    FROM dalex.NDC_manual_mapped s
+)
+
+SELECT DISTINCT *
+FROM tab
+WHERE source_concept_id in (
+
+    SELECT source_concept_id
+    FROM tab
+    GROUP BY source_concept_id
+    HAVING count (*) > 1)
+;
+
+
+
+--Check Device mapped to Drug domain
+SELECT *
+FROM NDC_manual_mapped m
+
+WHERE
+      target_concept_id != 'device'
+      AND source_concept_id IN (SELECT concept_id FROM ndc_non_drugs)
+;
+
+--Check Devices, that were NOT recognized by script
+SELECT *
+FROM NDC_manual_mapped m
+
+WHERE
+      target_concept_id = 'device'
+      AND source_concept_id NOT IN (SELECT concept_id FROM ndc_non_drugs)
+;

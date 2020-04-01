@@ -71,6 +71,17 @@ select * from QA_TESTS.GET_CHECKS();
 
 
 
+--manual ConceptAncestor (needed vocabularies are to be specified)
+ DO $_$
+ BEGIN
+    PERFORM VOCABULARY_PACK.pManualConceptAncestor(
+    pVocabularies => 'SNOMED,LOINC'
+ );
+ END $_$
+;
+
+
+
 
 --get_summary - changes in tables between dev-schema (current) and devv5/prodv5/any other schema
 --supported tables: concept, concept_relationship, concept_ancestor
