@@ -1,4 +1,7 @@
 --vaccines, antibodies, microorganism preparations
+
+DROP TABLE dev_amt.vaccines;
+CREATE TABLE dev_amt.vaccines AS (
 with inclusion as (SELECT
         --general
         'vaccine|virus|Microb|Micr(o|)org|Bacter|Booster|antigen|serum|sera|antiserum|globin|globulin|strain|antibody|conjugate|split|live|attenuate|Adjuvant|cellular|inactivate|antitoxin|toxoid|Rho|whole( |-|)cell|polysaccharide'
@@ -25,10 +28,10 @@ with inclusion as (SELECT
         'Coxiella|burnetii|C\.b|C\. b|Q( |-|)fever'
         || '|' ||
         --anthrax
-        'anthrax|antrax|Bacil|anthracis|B\.a|B\. a' 
+        'anthrax|antrax|Bacil|anthracis|B\.a|B\. a'
         || '|' ||
         --brucella
-        'brucel|(undulant|Mediterranean|Bang).*(fever|disease)|(fever|disease).*(undulant|Mediterranean|Bang)|melitensis|B\.m|B\. m|abortus|B\.a|B\. a' 
+        'brucel|(undulant|Mediterranean|Bang).*(fever|disease)|(fever|disease).*(undulant|Mediterranean|Bang)|melitensis|B\.m|B\. m|abortus|B\.a|B\. a'
         || '|' ||
         --rubella
         'rubella|RuV|Rubiv|Togav|Wistar|(RA).*(27).*(3)'
@@ -58,7 +61,7 @@ with inclusion as (SELECT
         'h(a|)emophilus|influenz|hib|H\.inf|H\. inf|Ross|HbOC|PRP(-| |)OMP|PRP(-| |)T|PRP(-| |)D'
         || '|' ||
         --Neisseria
-        'mening|N\.m|N\. m|Neis|CRM197|MenB|MenC(-| |)TT|MenY(-| |)TT|MenD|MenAC|MenCY|PsA(-| |)TT|MenACWY|MPSV|MCV'
+        'mening|N\.m|N\. m|Neis|CRM197|MenB|MenC(-| |)TT|MenY(-| |)TT|MenD|MenAC|MenCY|PsA(-| |)TT|MenACWY|MPSV|MCV|Adhesin( |-|)A|Factor( |-|)H|Membrane Vesicle'
         || '|' ||
         --rabies
         'rabies|rhabdo|rabdo|lyssav|PM( |-|)1503|1503( |-|)3M'
@@ -132,8 +135,48 @@ select * from (
       AND dcs1.concept_name !~* (select * from exclusion)
       AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
 ) a
-WHERE concept_class_id IN ('Ingredient'
+WHERE concept_class_id IN (
+                           'Ingredient'
                            ,'Drug Product'
                            ,'Device'
                           )
+)
+;
+
+SELECT *
+FROM vaccines;
+
+
+--check if there more vaccines using irs
+CREATE TABLE vaccines_2 AS (
+
+SELECT DISTINCT dcs2.*
+FROM drug_concept_stage dcs
+
+JOIN internal_relationship_stage irs
+    ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
+
+JOIN drug_concept_stage dcs2
+    ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
+
+WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
+    AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient')
+
+UNION
+
+SELECT DISTINCT *
+FROM vaccines
+WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device')
+
+)
+;
+
+SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*
+FROM vaccines_2 v
+LEFT JOIN concept c1
+    ON v.concept_code = c1.concept_code AND c1.vocabulary_id = 'AMT'
+LEFT JOIN concept_relationship cr
+    ON c1.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NULL
+LEFT JOIN concept c2
+    ON cr.concept_id_2 = c2.concept_id
 ;
