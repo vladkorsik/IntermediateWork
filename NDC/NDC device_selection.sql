@@ -26,9 +26,16 @@ WHERE concept_code in ('000199602', '00019N602', '000199601', '065174461', '0001
 --EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn III]
 --EGG YOLK PHOSPHOLIPIDS 12 MG/ML / Glycerin 25 MG/ML / Soybean Oil 100 MG/ML Injectable Suspension [Liposyn III]
 
---TODO: Add:
---SOD METABISULFITE
---'device' pattern
+
+--TODO: Add to 'device' pattern:
+/*
+Metabisulphite
+Hexaminolevulinate
+Gadofosveset
+Vasovist
+Ablavar
+*/
+
 
 --TODO CHeck drugs here:
 SELECT *
@@ -55,9 +62,13 @@ WHERE
 --https://www.fda.gov/Drugs/ResourcesForYou/Consumers/BuyingUsingMedicineSafely/UnderstandingOver-the-CounterMedicines/ucm239463.htm
 
 
+DO $_$
+BEGIN
 
---DROP TABLE IF EXISTS NDC_source;
-CREATE TABLE NDC_source as (
+
+
+DROP TABLE IF EXISTS NDC_not_mapped;
+CREATE TABLE NDC_not_mapped as (
 select * from devv5.concept
 where vocabulary_id = 'NDC'
 AND not exists
@@ -67,22 +78,22 @@ AND not exists
 
 --START
 DROP TABLE IF EXISTS NDC_remains;
-CREATE TABLE NDC_remains as (SELECT * FROM NDC_source)
+CREATE TABLE NDC_remains as (SELECT * FROM NDC_not_mapped)
 ;
 
 DROP TABLE IF EXISTS NDC_non_drugs;
-CREATE TABLE NDC_non_drugs (LIKE NDC_source)
+CREATE TABLE NDC_non_drugs (LIKE NDC_not_mapped)
 ;
 
 DROP TABLE IF EXISTS NDC_drugs;
-CREATE TABLE NDC_drugs (LIKE NDC_source)
+CREATE TABLE NDC_drugs (LIKE NDC_not_mapped)
 ;
 
 --TODO: check if we need this
 --Excluding mapping done manually
 --DELETE FROM NDC_remains
 --WHERE concept_id in (SELECT concept_id FROM dalex.NDC_manual)
-;
+
 
 --0
 --Code for DRUGS
@@ -1039,7 +1050,7 @@ FROM NDC_remains
 where concept_name ~* ('F(?=.*18)|Chrom(?=.*51)|Xe(?=.*133)|Iod(?=.*123)|I( 123|-123)|rubidium(?=.*82)|Thall(?=.*201)|' ||
       'Indium|in(?=.*111)|Iod(?=.*125)|I( 125|-125)|Cesium|Tc(?=.*99)|techn|ammonia N(?=.*13)|c-13|NH3')
 and concept_name !~* ('INFLUENZ|cold|multiple|vitamin|cough|Ceftibuten|armodafinil|' ||
-    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN');
+    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN')
 ;
 
 --Code for DRUGS
@@ -1049,13 +1060,16 @@ FROM NDC_remains
 where concept_name ~* ('F(?=.*18)|Chrom(?=.*51)|Xe(?=.*133)|Iod(?=.*123)|I( 123|-123)|rubidium(?=.*82)|Thall(?=.*201)|' ||
       'Indium|in(?=.*111)|Iod(?=.*125)|I( 125|-125)|Cesium|Tc(?=.*99)|techn|ammonia N(?=.*13)|c-13|NH3')
 and concept_name ~* ('INFLUENZ|cold|multiple|vitamin|cough|Ceftibuten|armodafinil|' ||
-    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN');
+    'borax|triclosan|allantoin|vagina|zinc|carboplatin|doxor(u|i)b|Cladribine|vanco|dexametha|alumin|primaqui|sulfasalazine|Fludarabine|Desferrioxamine|ZEVALIN')
 ;
 
 DELETE FROM NDC_remains
 WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_id from NDC_non_drugs)
 ;
 
+
+ END $_$
+;
 
 --------------------------------------------------
 
@@ -1074,7 +1088,7 @@ WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_i
 
 
 SELECT *
-FROM NDC_source;
+FROM NDC_not_mapped;
 
 
 
@@ -1180,7 +1194,7 @@ where concept_name ~* 'F(?=.*18)|Chrom(?=.*51)|Xe(?=.*133)|Iod(?=.*123)|I( 123|-
 
 --Check in Source
 SELECT concept_name
-FROM NDC_source
+FROM NDC_not_mapped
 WHERE concept_name ~* 'Hyoscyamine'
 GROUP BY concept_name
 ;

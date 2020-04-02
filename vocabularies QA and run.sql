@@ -119,3 +119,7 @@ select * from qa_tests.get_changes_concept_mapping(pCompareWith=>'devv5'); --Cha
 
 --check first vacant concept_id for manual change
 SELECT MAX (concept_id) + 1 FROM devv5.concept WHERE concept_id >= 31967 AND concept_id < 72245;
+
+
+--check first vacant concept_code among OMOP generated
+select 'OMOP'||max(replace(concept_code, 'OMOP','')::int4)+1 from devv5.concept where concept_code like 'OMOP%'  and concept_code not like '% %';
