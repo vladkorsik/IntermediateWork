@@ -147,7 +147,7 @@ SELECT *
 FROM vaccines;
 
 
---check if there more vaccines using irs
+--check if there are more vaccines using irs
 CREATE TABLE vaccines_2 AS (
 
 SELECT DISTINCT dcs2.*
