@@ -1,6 +1,5 @@
 --vaccines, antibodies, microorganism preparations
-
-DROP TABLE dev_amt.vaccines;
+--DROP TABLE dev_amt.vaccines;
 CREATE TABLE dev_amt.vaccines AS (
 with inclusion as (SELECT
         --general
@@ -115,7 +114,6 @@ exclusion as (SELECT
 
     )
 
-
 select * from (
     SELECT DISTINCT dcs.*
     FROM drug_concept_stage dcs
@@ -139,17 +137,18 @@ WHERE concept_class_id IN (
                            'Ingredient'
                            ,'Drug Product'
                            ,'Device'
+                           ,'Brand Name'
                           )
-)
+);
 ;
-
 SELECT *
 FROM vaccines;
 
-
---check if there more vaccines using irs
+--check if there are more vaccines (using irs)
+--DROP TABLE vaccines_2;
 CREATE TABLE vaccines_2 AS (
 
+SELECT * FROM (
 SELECT DISTINCT dcs2.*
 FROM drug_concept_stage dcs
 
@@ -160,17 +159,48 @@ JOIN drug_concept_stage dcs2
     ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
 
 WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
-    AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient')
+    AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
 
 UNION
 
 SELECT DISTINCT *
 FROM vaccines
-WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device')
+WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
+) as a
 
 )
 ;
 
+SELECT *
+FROM vaccines_2;
+
+SELECT * FROM dev_amt.relationship_to_concept_bckp300817;
+
+--vaccine ingredients mapping
+SELECT DISTINCT
+       dcs.concept_class_id,
+       dcs.concept_name,
+       NULL,
+       mapping_type,
+       precedence,
+       concept_id_2,
+       c.concept_code,
+       c.concept_name,
+       c.concept_class_id,
+       c.standard_concept,
+       c.invalid_reason,
+       c.domain_id,
+       c.vocabulary_id
+FROM relationship_to_concept rtc
+join drug_concept_stage dcs
+    on dcs.concept_code = rtc.concept_code_1
+join concept c
+    on rtc.concept_id_2 = c.concept_id
+WHERE rtc.concept_code_1 in (select concept_code from vaccines_2 where concept_class_id IN ('Ingredient'/*, 'Brand Name'*/))
+;
+
+
+--vaccine mapping review
 SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*
 FROM vaccines_2 v
 LEFT JOIN concept c1
