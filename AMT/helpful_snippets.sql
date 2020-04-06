@@ -107,33 +107,37 @@ JOIN drug_concept_stage dcs
 WHERE irs.concept_code_1 = '776862004';
 
 
+
 -- generate mapping review
-SELECT m.name, m.new_name, m.concept_id_2, m.precedence, m.mapping_type, m.conversion_factor, 'Unit' AS class,
-       c.concept_name, c.concept_code, c.concept_class_id, c.vocabulary_id, c.domain_id
+SELECT DISTINCT 'Unit' AS source_concept_class_id, m.name, m.new_name, m.concept_id_2, m.precedence, m.mapping_type, m.conversion_factor, c.*
 FROM unit_mapped m
-JOIN concept c
+LEFT JOIN concept c
     ON m.concept_id_2 = c.concept_id
+
 UNION
-SELECT m.*, NULL::float AS conversion_type, 'Ingredient' AS class, c.concept_name, c.concept_code, c.concept_class_id,
-       c.vocabulary_id, c.domain_id
+
+SELECT DISTINCT 'Ingredient' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
 FROM ingredient_mapped m
-JOIN concept c
+LEFT JOIN concept c
     ON m.concept_id_2 = c.concept_id
+
 UNION
-SELECT m.*, NULL::float AS conversion_type, 'Brand Name' AS class, c.concept_name, c.concept_code, c.concept_class_id,
-       c.vocabulary_id, c.domain_id
+
+SELECT DISTINCT 'Brand Name' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
 FROM brand_name_mapped m
-JOIN concept c
+LEFT JOIN concept c
     ON m.concept_id_2 = c.concept_id
+
 UNION
-SELECT m.*, NULL::float AS conversion_type, 'Supplier' AS class, c.concept_name, c.concept_code, c.concept_class_id,
-       c.vocabulary_id, c.domain_id
+
+SELECT DISTINCT 'Supplier' AS source_concept_class_id, m.*, NULL::float AS conversion_factor,  c.*
 FROM supplier_mapped m
-JOIN concept c
+LEFT JOIN concept c
     ON m.concept_id_2 = c.concept_id
+
 UNION
-SELECT m.*, NULL::float AS conversion_type, 'Dose Form' AS class, c.concept_name, c.concept_code, c.concept_class_id,
-       c.vocabulary_id, c.domain_id
+
+SELECT DISTINCT 'Dose Form' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
 FROM dose_form_mapped m
-JOIN concept c
+LEFT JOIN concept c
     ON m.concept_id_2 = c.concept_id;
