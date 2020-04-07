@@ -79,3 +79,36 @@ WHERE    (c1.concept_code IS NULL AND cs1.concept_code IS NULL)
 	 OR rl.relationship_id IS NULL
 	 OR crm.valid_start_date > CURRENT_DATE
 	 OR crm.valid_end_date < crm.valid_start_date;
+
+
+-- M. Yankina mapping request
+TRUNCATE TABLE CRM_Geisinger_LOINC;
+CREATE TABLE CRM_Geisinger_LOINC AS
+    SELECT concept_code_1,
+       concept_code_2,
+       vocabulary_id_1,
+       vocabulary_id_2,
+       relationship_id,
+       valid_start_date,
+       valid_end_date,
+       invalid_reason
+FROM concept_relationship_manual;
+
+SELECT * FROM CRM_Geisinger_LOINC;
+INSERT INTO concept_relationship_manual (concept_code_1,
+       concept_code_2,
+       vocabulary_id_1,
+       vocabulary_id_2,
+       relationship_id,
+       valid_start_date,
+       valid_end_date,
+       invalid_reason)
+SELECT concept_code_1,
+       concept_code_2,
+       vocabulary_id_1,
+       vocabulary_id_2,
+       relationship_id,
+       valid_start_date,
+       valid_end_date,
+       invalid_reason
+FROM CRM_Geisinger_LOINC;
