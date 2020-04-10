@@ -1,6 +1,6 @@
 --=============================================== INGREDIENTS ==============================================
 --1. create table and load mm.data
-DROP TABLE IF EXISTS ingredient_mm;
+-- DROP TABLE IF EXISTS ingredient_mm;
 
 CREATE TABLE IF NOT EXISTS ingredient_mm
 (
@@ -70,6 +70,11 @@ JOIN concept c
 WHERE mm.concept_name <> c.concept_name
   AND mm.target_concept_id NOT IN (0, 17);
 
+-- new_name is equal to space symbol(s)
+SELECT *
+FROM ingredient_mm mm
+WHERE mm.new_name ~* '^[ ]+$';
+
 
 --3. Insert ingredients into ingredient_mapped from manual_mapping
 INSERT INTO ingredient_mapped (name, new_name, concept_id_2, precedence, mapping_type)
@@ -94,7 +99,7 @@ WHERE name NOT IN (
 
 --=============================================== BRAND NAMES ==============================================
 --1. create table and load mm.data
-DROP TABLE IF EXISTS brand_name_mm;
+-- DROP TABLE IF EXISTS brand_name_mm;
 
 CREATE TABLE IF NOT EXISTS brand_name_mm
 (
@@ -163,6 +168,10 @@ JOIN concept c
 WHERE mm.concept_name <> c.concept_name
   AND mm.target_concept_id NOT IN (0, 17);
 
+-- new_name is equal to space symbol(s)
+SELECT *
+FROM brand_name_mm mm
+WHERE mm.new_name ~* '^[ ]+$';
 
 --3. Insert brand_names into brand_name_mapped from manual_mapping
 INSERT INTO brand_name_mapped (name, new_name, concept_id_2, precedence, mapping_type)
@@ -188,7 +197,7 @@ WHERE name NOT IN (
 
 --=============================================== SUPPLIER ==============================================
 --1. create table and load mm.data
-DROP TABLE IF EXISTS supplier_mm;
+-- DROP TABLE IF EXISTS supplier_mm;
 
 CREATE TABLE IF NOT EXISTS supplier_mm
 (
@@ -257,6 +266,10 @@ JOIN concept c
 WHERE mm.concept_name <> c.concept_name
   AND mm.target_concept_id NOT IN (0, 17);
 
+-- new_name is equal to space symbol(s)
+SELECT *
+FROM supplier_mm mm
+WHERE mm.new_name ~* '^[ ]+$';
 
 --3. Insert suppliers into supplier_mapped from manual_mapping
 INSERT INTO supplier_mapped (name, new_name, concept_id_2, precedence, mapping_type)
@@ -282,7 +295,7 @@ WHERE name NOT IN (
 
 --=============================================== DOSE FORM ==============================================
 --1. create table and load mm.data
-DROP TABLE IF EXISTS dose_form_mm;
+-- DROP TABLE IF EXISTS dose_form_mm;
 
 CREATE TABLE IF NOT EXISTS dose_form_mm
 (
@@ -351,6 +364,10 @@ JOIN concept c
 WHERE mm.concept_name <> c.concept_name
   AND mm.target_concept_id NOT IN (0, 17);
 
+-- new_name is equal to space symbol(s)
+SELECT *
+FROM dose_form_mm mm
+WHERE mm.new_name ~* '^[ ]+$';
 
 --3. Insert dose forms into dose_form_mapped from manual_mapping
 INSERT INTO dose_form_mapped (name, new_name, concept_id_2, precedence, mapping_type)
@@ -376,7 +393,7 @@ WHERE name NOT IN (
 
 --=============================================== UNIT ==============================================
 --1. create table and load mm.data
-DROP TABLE IF EXISTS unit_mm;
+-- DROP TABLE IF EXISTS unit_mm;
 
 CREATE TABLE IF NOT EXISTS unit_mm
 (
@@ -449,6 +466,10 @@ JOIN concept c
 WHERE mm.concept_name <> c.concept_name
   AND mm.target_concept_id NOT IN (0, 17);
 
+-- new_name is equal to space symbol(s)
+SELECT *
+FROM unit_mm mm
+WHERE mm.new_name ~* '^[ ]+$';
 
 --3. Insert units into unit_mapped from manual_mapping
 INSERT INTO unit_mapped (name, new_name, concept_id_2, precedence, conversion_factor, mapping_type)
