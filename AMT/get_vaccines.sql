@@ -176,7 +176,7 @@ FROM vaccines_2;
 
 SELECT * FROM dev_amt.relationship_to_concept_bckp300817;
 
---vaccine ingredients mapping
+--vaccine attributes mapping review
 SELECT DISTINCT
        dcs.concept_class_id,
        dcs.concept_name,
@@ -191,17 +191,22 @@ SELECT DISTINCT
        c.invalid_reason,
        c.domain_id,
        c.vocabulary_id
-FROM relationship_to_concept rtc
-join drug_concept_stage dcs
-    on dcs.concept_code = rtc.concept_code_1
-join concept c
-    on rtc.concept_id_2 = c.concept_id
-WHERE rtc.concept_code_1 in (select concept_code from vaccines_2 where concept_class_id IN ('Ingredient'/*, 'Brand Name'*/))
+FROM "mapping_review_backup_2020-03-31" m
+JOIN drug_concept_stage dcs
+    ON dcs.concept_code = m.concept_code_1
+JOIN concept c
+    ON m.concept_id_2 = c.concept_id
+WHERE m.concept_code_1 IN (
+                          SELECT concept_code
+                          FROM vaccines_2
+                          WHERE concept_class_id IN ('Ingredient'/*, 'Brand Name'*/)
+                          )
 ;
 
 
---vaccine mapping review
-SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*
+--vaccine final mapping review
+SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*,
+                CASE WHEN d5c.concept_name IS NULL THEN 'new' END AS new_concept
 FROM vaccines_2 v
 LEFT JOIN concept c1
     ON v.concept_code = c1.concept_code AND c1.vocabulary_id = 'AMT'
@@ -209,4 +214,7 @@ LEFT JOIN concept_relationship cr
     ON c1.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NULL
 LEFT JOIN concept c2
     ON cr.concept_id_2 = c2.concept_id
+LEFT JOIN devv5.concept d5c
+    ON v.concept_code = d5c.concept_code
+        AND d5c.vocabulary_id = 'AMT'
 ;

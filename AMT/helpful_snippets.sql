@@ -108,36 +108,3 @@ WHERE irs.concept_code_1 = '776862004';
 
 
 
--- generate mapping review
-SELECT DISTINCT 'Unit' AS source_concept_class_id, m.name, m.new_name, m.concept_id_2, m.precedence, m.mapping_type, m.conversion_factor, c.*
-FROM unit_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Ingredient' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM ingredient_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Brand Name' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM brand_name_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Supplier' AS source_concept_class_id, m.*, NULL::float AS conversion_factor,  c.*
-FROM supplier_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Dose Form' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM dose_form_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id;
