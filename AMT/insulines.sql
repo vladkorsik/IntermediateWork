@@ -111,11 +111,9 @@ FROM insulines_2 ins
 LEFT JOIN concept c1
     ON ins.concept_code = c1.concept_code AND c1.vocabulary_id = 'AMT'
 LEFT JOIN concept_relationship cr
-    ON c1.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NULL
+    ON c1.concept_id = cr.concept_id_1 AND cr.relationship_id in ('Maps to', 'Source - RxNorm eq') AND cr.invalid_reason IS NULL
 LEFT JOIN concept c2
     ON cr.concept_id_2 = c2.concept_id
 LEFT JOIN devv5.concept d5c
-    ON ins.concept_code = d5c.concept_code
-        AND d5c.vocabulary_id = 'AMT'
-where ins.concept_class_id not in ('Brand Name', 'Ingredient')
+    ON c2.concept_id = d5c.concept_id
 ;
