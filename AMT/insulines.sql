@@ -8,15 +8,15 @@ CREATE TABLE dev_amt.insulines AS
                              'humuli|hypurin|lantus|levemir|novolin|novolog|' ||
                              'novomix|novorapid|mixtard|optisulin|protaphane|' ||
                              'ryzodeg|semglee|soluqua|toujeo|tresiba'
-                      )
+                      ),
+         exclusion AS (SELECT 'Ctpp|Mpp|Tpp|Mpuu|Tpuu')
+
     SELECT *
     FROM (
          SELECT DISTINCT dcs.*
          FROM drug_concept_stage dcs
-         WHERE dcs.concept_name ~* (
-                                   SELECT *
-                                   FROM inclusion
-                                   )
+         WHERE dcs.concept_name ~* (SELECT * FROM inclusion)
+           AND dcs.concept_name !~* (SELECT * FROM exclusion)
            AND dcs.concept_class_id NOT IN ('Unit', 'Supplier')
 
          UNION
@@ -27,19 +27,16 @@ CREATE TABLE dev_amt.insulines AS
              ON dcs1.concept_code = fr.sourceid::text
          JOIN drug_concept_stage dcs2
              ON dcs2.concept_code = fr.destinationid::text
-         WHERE dcs1.concept_name ~* (
-                                    SELECT *
-                                    FROM inclusion
-                                    )
+         WHERE dcs1.concept_name ~* (SELECT * FROM inclusion)
+           AND dcs2.concept_name !~* (SELECT * FROM exclusion)
            AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
          ) a
-    WHERE concept_class_id IN (
-                               'Ingredient', 'Drug Product', 'Device', 'Brand Name'
-        )
+    WHERE concept_class_id IN ('Ingredient', 'Drug Product', 'Device', 'Brand Name')
     );
 
 SELECT *
-FROM insulines;
+FROM insulines
+ORDER BY concept_name;
 
 --check if there are more insulines (using irs)
 DROP TABLE IF EXISTS insulines_2;
@@ -49,13 +46,10 @@ CREATE TABLE insulines_2 AS
     FROM (
          SELECT DISTINCT dcs2.*
          FROM drug_concept_stage dcs
-
          JOIN internal_relationship_stage irs
              ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
-
          JOIN drug_concept_stage dcs2
              ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
-
          WHERE dcs.concept_code IN (
                                    SELECT concept_code
                                    FROM insulines
@@ -73,7 +67,8 @@ CREATE TABLE insulines_2 AS
 ;
 
 SELECT *
-FROM insulines_2;
+FROM insulines_2
+ORDER BY concept_name;
 
 
 --insulines attributes mapping review
@@ -116,4 +111,5 @@ LEFT JOIN concept c2
     ON cr.concept_id_2 = c2.concept_id
 LEFT JOIN devv5.concept d5c
     ON c2.concept_id = d5c.concept_id
+ORDER BY source_concept_name
 ;
