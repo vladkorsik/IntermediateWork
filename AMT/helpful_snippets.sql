@@ -107,4 +107,50 @@ JOIN drug_concept_stage dcs
 WHERE irs.concept_code_1 = '776862004';
 
 
+-- Rx ingredients without drugs
+SELECT DISTINCT cc.*
+FROM concept cc
+WHERE cc.concept_id NOT IN (
+                           SELECT DISTINCT c.concept_id
+                           FROM concept c
+                           JOIN concept_relationship cr
+                               ON c.concept_id = cr.concept_id_1
+                           WHERE c.concept_id IN (
+                                                 SELECT concept_id_2
+                                                 FROM relationship_to_concept
+                                                 )
+                             AND c.concept_class_id = 'Ingredient'
+                             AND cr.relationship_id ILIKE '%RxNorm ing of%'
+                             AND c.standard_concept = 'S'
+                             AND cr.invalid_reason IS NULL
+                           )
+  AND cc.standard_concept = 'S'
+  AND cc.concept_class_id = 'Ingredient'
+;
+
+-- only AMT ingredients without clinical drugs
+SELECT DISTINCT dcs.*
+FROM drug_concept_stage dcs
+JOIN relationship_to_concept rtc
+    ON dcs.concept_code = rtc.concept_code_1
+WHERE rtc.concept_id_2 IN (
+                          SELECT DISTINCT cc.concept_id
+                          FROM concept cc
+                          WHERE cc.concept_id NOT IN (
+                                                     SELECT DISTINCT c.concept_id
+                                                     FROM concept c
+                                                     JOIN concept_relationship cr
+                                                         ON c.concept_id = cr.concept_id_1
+                                                     WHERE c.concept_id IN (
+                                                                           SELECT concept_id_2
+                                                                           FROM relationship_to_concept
+                                                                           )
+                                                       AND c.concept_class_id = 'Ingredient'
+                                                       AND cr.relationship_id ILIKE '%RxNorm ing of%'
+                                                       AND c.standard_concept = 'S'
+                                                       AND cr.invalid_reason IS NULL
+                                                     )
+                            AND cc.standard_concept = 'S'
+                            AND cc.concept_class_id = 'Ingredient'
+                          );
 
