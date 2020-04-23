@@ -106,6 +106,23 @@ JOIN drug_concept_stage dcs
     ON irs.concept_code_2 = dcs.concept_code
 WHERE irs.concept_code_1 = '776862004';
 
+--corresponding clinical drug forms for any drug or group of drugs(concept_code) via ancestor
+SELECT c.*, c2.*
+FROM concept c
+JOIN concept_relationship cr1
+    ON c.concept_id = cr1.concept_id_1
+        AND cr1.invalid_reason IS NULL
+        AND cr1.relationship_id = 'Maps to'
+JOIN concept_ancestor ca
+    ON cr1.concept_id_2 = ca.descendant_concept_id
+JOIN concept c2
+    ON ca.ancestor_concept_id = c2.concept_id
+        AND c2.concept_class_id = 'Clinical Drug Form'
+WHERE c.concept_code IN (
+                        SELECT concept_code
+                        FROM insulines_2
+                        WHERE concept_class_id = 'Drug Product'
+                        );
 
 -- Rx ingredients without drugs
 SELECT DISTINCT cc.*
