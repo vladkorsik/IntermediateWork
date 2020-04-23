@@ -1,6 +1,6 @@
 --vaccines, antibodies, microorganism preparations
---DROP TABLE dev_amt.vaccines;
-CREATE TABLE dev_amt.vaccines AS (
+--DROP TABLE vaccines;
+CREATE TABLE vaccines AS (
 with inclusion as (SELECT
         --general
         'vaccine|virus|Microb|Micr(o|)org|Bacter|Booster|antigen|serum|sera|antiserum|globin|globulin|strain|antibody|conjugate|split|live|attenuate|Adjuvant|cellular|inactivate|antitoxin|toxoid|Rho|whole( |-|)cell|polysaccharide'
@@ -110,11 +110,11 @@ exclusion as (SELECT
     'Serapine|Seralin|Olive|Diarrhoea|Antihistamine|Antitussive|Arginaid|Ointment|Persist|Benadryl|Benserazide|Blistex|Liver|Minoxidil|Ablavar|Inhibitor|Sanitiser|Anti(-| |)Bacterial' || '|' ||
     'Anti(-| |)microbial|Brivaracetam|Calamine|Gold|Caustic|Varenicline|Vardenafil|Codral|Coldguard|Oestrogen|Crosvar|pad|Cymevene|Cold|Cough|Antiseptic|Elmendos|Emend' || '|' ||
     'Fluorescein|Horseradish|Glivec|glucose|Haemorrhoid|Heparin(?! bind)|Hepasol|Hepsera|Imbruvica|Lavender|Levosimendan|Stick|Energy|Mendeleev|Border|Nexavar|Valsartan|Nuvaring|Oruvail' || '|' ||
-    'Seravit|Pevaryl|Alanine|Magnesium|Autohaler|Inhaler|Rivaroxaban|Simvar|Stivarga|Tamarindus|Tamiflu|Tenderwet|Tevaripiprazole|Truvada|Zyprexa'
-
+    'Seravit|Pevaryl|Alanine|Magnesium|Autohaler|Inhaler|Rivaroxaban|Simvar|Stivarga|Tamarindus|Tamiflu|Tenderwet|Tevaripiprazole|Truvada|Zyprexa|Meadowsweet|Gripe'
     )
 
 select * from (
+
     SELECT DISTINCT dcs.*
     FROM drug_concept_stage dcs
     WHERE dcs.concept_name ~* (select * from inclusion)
@@ -130,8 +130,9 @@ select * from (
     JOIN drug_concept_stage dcs2
         ON dcs2.concept_code = fr.destinationid::text
     WHERE dcs1.concept_name ~* (select * from inclusion)
-      AND dcs1.concept_name !~* (select * from exclusion)
-      AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
+        AND dcs1.concept_name !~* (select * from exclusion)
+        AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
+        AND dcs2.concept_name !~* (select * from exclusion)
 ) a
 WHERE concept_class_id IN (
                            'Ingredient'
@@ -141,6 +142,8 @@ WHERE concept_class_id IN (
                           )
 );
 ;
+
+
 SELECT *
 FROM vaccines;
 
@@ -149,32 +152,40 @@ FROM vaccines;
 CREATE TABLE vaccines_2 AS (
 
 SELECT * FROM (
-SELECT DISTINCT dcs2.*
-FROM drug_concept_stage dcs
 
-JOIN internal_relationship_stage irs
-    ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
+    SELECT DISTINCT dcs2.*
+    FROM drug_concept_stage dcs
 
-JOIN drug_concept_stage dcs2
-    ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
+    JOIN internal_relationship_stage irs
+        ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
 
-WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
-    AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
+    JOIN drug_concept_stage dcs2
+        ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
 
-UNION
+    WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
+        AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
 
-SELECT DISTINCT *
-FROM vaccines
-WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
+    UNION
+
+    SELECT DISTINCT *
+    FROM vaccines
+    WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
 ) as a
 
 )
 ;
 
-SELECT *
-FROM vaccines_2;
+--additinal concepts added
+SELECT DISTINCT *
+FROM vaccines_2
 
-SELECT * FROM dev_amt.relationship_to_concept_bckp300817;
+EXCEPT
+
+SELECT DISTINCT *
+FROM vaccines
+;
+
+SELECT * FROM relationship_to_concept_bckp300817;
 
 --vaccine attributes mapping review
 SELECT DISTINCT
