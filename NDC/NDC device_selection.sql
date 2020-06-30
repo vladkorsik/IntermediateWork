@@ -37,22 +37,24 @@ Ablavar
 */
 
 
---TODO CHeck drugs here:
+--TODO Check drugs here:
 SELECT *
-FROM NDC_manual_mapped m
+FROM dev_ndc.NDC_manual_mapped m
+WHERE TRUE
+      AND target_concept_id != 'device'
+      AND target_concept_id != '0'
+      AND target_concept_id != ''
+      AND source_concept_id IN (SELECT concept_id FROM dev_ndc.ndc_non_drugs)
+;
 
-WHERE
-      target_concept_id != 'device'
-      AND source_concept_id IN (SELECT concept_id FROM ndc_non_drugs);
 
-
---ToDO Check Devices were NOT recornized by script:
+--ToDO Check Devices were NOT recognized by script:
 SELECT *
-FROM NDC_manual_mapped m
+FROM dev_ndc.NDC_manual_mapped m
 
-WHERE
-      target_concept_id = 'device'
-      AND source_concept_id NOT IN (SELECT concept_id FROM ndc_non_drugs)
+WHERE TRUE
+      AND target_concept_id = 'device'
+      AND source_concept_id NOT IN (SELECT concept_id FROM dev_ndc.ndc_non_drugs)
 ;
 
 
@@ -1134,10 +1136,10 @@ WHERE concept_name ~* 'vitamin'
 ;
 
 
---Example
---Example
---Example
---Example
+
+
+
+--Example Example Example Example
 --Code for NON-DRUGS
 INSERT INTO NDC_non_drugs
 SELECT *
@@ -1155,10 +1157,9 @@ WHERE concept_name
 DELETE FROM NDC_remains
 WHERE concept_id in (select concept_id from NDC_drugs UNION ALL select concept_id from NDC_non_drugs)
 ;
---Example
---Example
---Example
---Example
+--Example Example Example Example
+
+
 
 
 
