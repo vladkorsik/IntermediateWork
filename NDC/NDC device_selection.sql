@@ -41,9 +41,9 @@ Ablavar
 SELECT *
 FROM dev_ndc.NDC_manual_mapped m
 WHERE TRUE
-      AND target_concept_id != 'device'
-      AND target_concept_id != '0'
-      AND target_concept_id != ''
+      AND target_concept_id != 17
+      AND target_concept_id != 0
+      AND target_concept_id IS NOT NULL
       AND source_concept_id IN (SELECT concept_id FROM dev_ndc.ndc_non_drugs)
 ;
 
@@ -53,7 +53,7 @@ SELECT *
 FROM dev_ndc.NDC_manual_mapped m
 
 WHERE TRUE
-      AND target_concept_id = 'device'
+      AND target_concept_id = 17
       AND source_concept_id NOT IN (SELECT concept_id FROM dev_ndc.ndc_non_drugs)
 ;
 
