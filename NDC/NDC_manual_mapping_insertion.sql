@@ -1023,7 +1023,7 @@ WHERE (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relatio
                                                                                                     WHERE invalid_reason IS NULL)
 ;
 
---2020-07-06
+--2020-07-07
 
 --to deprecate changed mappings
 --SELECT (try-out for the following UPDATE)
