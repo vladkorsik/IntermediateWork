@@ -76,9 +76,9 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45161895,00045006951,Levofloxacin 25 MGML Injectable Solution [Levaquin],Levofloxacin 25 MG/ML Injectable Solution [Levaquin],,,44073217,OMOP1067848,Levofloxacin 25 MG/ML Injection [Levaquin],Branded Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
-45281750,00049343526,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,35602751,1670199,Fosphenytoin sodium 75 MG/ML Injection [Cerebyx],Branded Drug,Standard,Valid,Drug,RxNorm
+45281750,00049343526,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,40846188,OMOP2044150,Fluconazole 2 MG/ML Injectable Solution [Diflucan],Branded Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
-45264753,00049343826,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,35602751,1670199,Fosphenytoin sodium 75 MG/ML Injection [Cerebyx],Branded Drug,Standard,Valid,Drug,RxNorm
+45264753,00049343826,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,40846188,OMOP2044150,Fluconazole 2 MG/ML Injectable Solution [Diflucan],Branded Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
 45367058,00071400705,Fosphenytoin sodium 75 MGML Injectable Solution [Cerebyx],Fosphenytoin sodium 75 MG/ML Injectable Solution [Cerebyx],,,35602751,1670199,Fosphenytoin sodium 75 MG/ML Injection [Cerebyx],Branded Drug,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
@@ -2906,7 +2906,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45072956,58016084020,Alprazolam 1 Oral Tablet [Alprozolam],Alprazolam 1 MG Oral Tablet [Alprozolam],,,781062,197321,Alprazolam 1 MG Oral Tablet,Clinical Drug,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
-45144821,00049337126,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,42481605,OMOP417295,Fluconazole 2 MG/ML Injectable Solution,Clinical Drug,Standard,Valid,Drug,RxNorm Extension
+45144821,00049337126,Fluconazole 2 MGML Injectable Solution [Diflucan],Fluconazole 2 MG/ML Injectable Solution [Diflucan],,,40846188,OMOP2044150,Fluconazole 2 MG/ML Injectable Solution [Diflucan],Branded Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
 45268117,00839745749,Diphenhydramine 20 MGML Topical Cream [Anti-Itch],Diphenhydramine 20 MG/ML Topical Cream [Anti-Itch],,,40232439,1050077,Diphenhydramine Hydrochloride 20 MG/ML Topical Cream,Clinical Drug,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
@@ -3096,7 +3096,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 46364748,16714036603,84 Ethinyl Estradiol 0.03 Levonorgestrel 0.15 Oral Tablet 7 Inert Ingredients 1 Oral Tablet Pack [Setlakin 91 Day],{84 (Ethinyl Estradiol 0.03 MG / Levonorgestrel 0.15 MG Oral Tablet) / 7 (Inert Ingredients 1 MG Oral Tablet) } Pack [Setlakin 91 Day],,,46275454,1661092,{84 (Ethinyl Estradiol 0.03 MG / Levonorgestrel 0.15 MG Oral Tablet) / 7 (Inert Ingredients 1 MG Oral Tablet) } Pack [Setlakin 91 Day],Branded Pack,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
-45898505,167140416,norethindrone acetateethinyl estradiol and ferrous fumarate KIT,norethindrone acetate/ethinyl estradiol and ferrous fumarate KIT,,,41111504,OMOP2309466,Ethinyl Estradiol / ferrous cation / Norethindrone Oral Tablet,Clinical Drug Form,Standard,Valid,Drug,RxNorm Extension
+45898505,167140416,norethindrone acetateethinyl estradiol and ferrous fumarate KIT,norethindrone acetate/ethinyl estradiol and ferrous fumarate KIT,,,46221783,1605091,{24 (ethinyl estradiol 0.02 MG / norethindrone acetate 1 MG Oral Tablet) / 4 (ferrous fumarate 75 MG Oral Tablet) } Pack [Larin 24 Fe 1/20],Branded Pack,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
 46250049,16714041601,24 Ethinyl Estradiol 0.02 norethindrone acetate 1 Oral Tablet 4 Ferrous fumarate 75 Oral Tablet Pack [Larin 24 Fe 120],{24 (Ethinyl Estradiol 0.02 MG / norethindrone acetate 1 MG Oral Tablet) / 4 (Ferrous fumarate 75 MG Oral Tablet) } Pack [Larin 24 Fe 1/20],,,46221783,1605091,{24 (Ethinyl Estradiol 0.02 MG / norethindrone acetate 1 MG Oral Tablet) / 4 (Ferrous fumarate 75 MG Oral Tablet) } Pack [Larin 24 Fe 1/20],Branded Pack,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
