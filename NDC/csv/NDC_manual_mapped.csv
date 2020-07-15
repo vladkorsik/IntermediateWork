@@ -1298,7 +1298,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45001273,51552005506,ACETIC ACID 5% SOLUTION,ACETIC ACID 5% SOLUTION,,,929549,168,Acetic Acid,Ingredient,S,,Drug,RxNorm
 ,,,,,,,,,,,,,
-44916578,51552018505,ALUMINUM CHLORIDE CRYSTALS,ALUMINUM CHLORIDE CRYSTALS,,,42898412,1311504,Aluminum,Ingredient,S,,Drug,RxNorm
+44916578,51552018505,ALUMINUM CHLORIDE CRYSTALS,ALUMINUM CHLORIDE CRYSTALS,,,957393,46241,aluminum chloride,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
 44950476,51552090205,GABAPENTIN POWDER,GABAPENTIN POWDER,,,797399,25480,gabapentin,Ingredient,S,,Drug,RxNorm
 ,,,,,,,,,,,,,
@@ -3542,7 +3542,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45044432,002801158,"acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg1 25mg1 650mg1 ORAL POWDER [alka-seltzer plus night severe cold, cough and flu]","acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg/1 / 25mg/1 / 650mg/1 ORAL POWDER [alka-seltzer plus night severe cold, cough and flu]",,,44033521,OMOP1028152,Acetaminophen 650 MG / Diphenhydramine 25 MG / Phenylephrine 10 MG Oral Powder,Clinical Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
-45847745,638240233,"acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg1 25mg1 650mg1 ORAL POWDER, FOR SOLUTION [mucinex fast-max night time cold and flu]","acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg/1 / 25mg/1 / 650mg/1 ORAL POWDER, FOR SOLUTION [mucinex fast-max night time cold and flu]",,,44033521,OMOP1028152,Acetaminophen 650 MG / Diphenhydramine 25 MG / Phenylephrine 10 MG Oral Powder,,Standard,Valid,Drug,RxNorm Extension
+45847745,638240233,"acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg1 25mg1 650mg1 ORAL POWDER, FOR SOLUTION [mucinex fast-max night time cold and flu]","acetaminophen, diphenhydramine hydrochloride, and phenylephrine hydrochloride 10mg/1 / 25mg/1 / 650mg/1 ORAL POWDER, FOR SOLUTION [mucinex fast-max night time cold and flu]",,,44033521,OMOP1028152,Acetaminophen 650 MG / Diphenhydramine 25 MG / Phenylephrine 10 MG Oral Powder,Clinical Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
 45813436,301420445,"acetaminophen, diphenhydramine hydrochloride, phenylephrine hydrochloride 10mg1 25mg1 650mg1 ORAL POWDER, FOR SOLUTION","acetaminophen, diphenhydramine hydrochloride, phenylephrine hydrochloride 10mg/1 / 25mg/1 / 650mg/1 ORAL POWDER, FOR SOLUTION",,,44033521,OMOP1028152,Acetaminophen 650 MG / Diphenhydramine 25 MG / Phenylephrine 10 MG Oral Powder,Clinical Drug,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
@@ -8537,7 +8537,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 44924850,00182448726,STRESS TABLET,STRESS TABLET,15,,17,,,,,,,
 ,,,,,,,,,,,,,
-44965967,49022019150,ALOE VERA BODY GEL,ALOE VERA BODY GEL,15,,17,,,,,,,RxNorm
+44965967,49022019150,ALOE VERA BODY GEL,ALOE VERA BODY GEL,15,,17,,,,,,,
 ,,,,,,,,,,,,,
 44967388,51927152800,PILOCARPINE HCL POWDER,PILOCARPINE HCL POWDER,15,,945286,8328,Pilocarpine,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
@@ -8648,7 +8648,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45031584,11845012865,GRAPE SEED 50 CAPSULE,GRAPE SEED 50 MG CAPSULE,14,,36505200,OMOP4835168,Grape Seed Extract Oral Capsule,Clinical Drug Form,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
-45035697,51927176700,AMMONIUM LACTATE SOLUTION,AMMONIUM LACTATE SOLUTION,14,,19126894,709,Ammonium,Ingredient,Standard,Valid,Drug,RxNorm
+45035697,51927176700,AMMONIUM LACTATE SOLUTION,AMMONIUM LACTATE SOLUTION,14,,19011035,114202,lactate,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
 45039282,59702071060,PREQUE 10 TABLET,PREQUE 10 TABLET,14,,36878782,OMOP994671,Multivitamin preparation,Ingredient,Standard,Valid,Drug,RxNorm Extension
 ,,,,,,,,,,,,,
@@ -9327,7 +9327,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 45032742,31604014004,VALERIAN 400 CAPSULE,VALERIAN 400 MG CAPSULE,9,,1397059,253206,valerian root extract,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
-45040194,62991283903,ACETONE LIQUID,ACETONE LIQUID,9,,19032614,178,Acetone,Ingredient,Standard,Valid,Drug,RxNorm
+45040194,62991283903,ACETONE LIQUID,ACETONE LIQUID,9,,17,,,,,,,
 ,,,,,,,,,,,,,
 45048524,11822854880,RA KID PANTS BOYS,RA KID PANTS BOYS,9,,17,,,,,,,
 ,,,,,,,,,,,,,
@@ -9688,7 +9688,7 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 44852871,62991290602,NITROFURANTOIN POWDER,NITROFURANTOIN POWDER,7,,920293,7454,Nitrofurantoin,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
-44854839,70074051127,TYREX-2 POWDER,TYREX-2 POWDER,7,,588017,OMOP3138396,Amino Acids,Ingredient,Standard,Valid,Drug,RxNorm Extension
+44854839,70074051127,TYREX-2 POWDER,TYREX-2 POWDER,7,,17,,,,,,,
 ,,,,,,,,,,,,,
 44855648,00065929470,GOOD START SUPREME POWDER,GOOD START SUPREME POWDER,7,,17,,,,,,,
 ,,,,,,,,,,,,,
@@ -9889,7 +9889,6 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 45338422,11391030203,BREATHERITE MDI SPACER,BREATHERITE MDI SPACER,7,,17,,,,,,,
 ,,,,,,,,,,,,,
 45342685,51927219000,ASPARTIC ACID POTASSIUM SALT,ASPARTIC ACID POTASSIUM SALT,7,,19012686,1169,Aspartic Acid,Ingredient,Standard,Valid,Drug,RxNorm
-45342685,51927219000,ASPARTIC ACID POTASSIUM SALT,ASPARTIC ACID POTASSIUM SALT,7,,19049024,8588,Potassium,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
 45342692,51927235600,BETA CAROTENE BEADS,BETA CAROTENE BEADS,7,,19037223,19143,Beta Carotene,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
@@ -9919,7 +9918,6 @@ source_concept_id,source_code,source_code_description_mod,source_code_descriptio
 ,,,,,,,,,,,,,
 46345097,75839019205,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,7,,1713332,723,Amoxicillin,Ingredient,Standard,Valid,Drug,RxNorm
 46345097,75839019205,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,7,,1759842,48203,Clavulanate,Ingredient,Standard,Valid,Drug,RxNorm
-46345097,75839019205,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,AMOXICILLIN CLAVULANATE POTASSIUM - amoxicillin clavulanate potassium powder,7,,19049024,8588,Potassium,Ingredient,Standard,Valid,Drug,RxNorm
 ,,,,,,,,,,,,,
 46345828,69163413101,"ZYMADERM - iodine, thuja occidentalis whole and echinacea, unspecified liquid","ZYMADERM - iodine, thuja occidentalis whole and echinacea, unspecified liquid",7,,1780601,5933,Iodine,Ingredient,Standard,Valid,Drug,RxNorm
 46345828,69163413101,"ZYMADERM - iodine, thuja occidentalis whole and echinacea, unspecified liquid","ZYMADERM - iodine, thuja occidentalis whole and echinacea, unspecified liquid",7,,42904249,1358891,Thuja occidentalis whole extract,Ingredient,Standard,Valid,Drug,RxNorm

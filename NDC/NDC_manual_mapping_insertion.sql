@@ -695,6 +695,12 @@ SELECT *
 FROM dev_ndc.NDC_manual_mapped;
 
 
+--check semantics of target concepts (vocabs, domains, classes using sorting)
+SELECT *
+FROM dev_ndc.NDC_manual_mapped
+ORDER BY target_domain_id, target_vocabulary_id, target_concept_class_id, target_concept_code, target_concept_name, target_concept_id;
+
+
 --check source_code uniqueness
 SELECT DISTINCT source_concept_id
 FROM  dev_ndc.NDC_manual_mapped
@@ -942,11 +948,11 @@ AND (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relations
 
 
 
---Check
+/*--Check
 SELECT *
 FROM dev_ndc.concept_relationship_manual
 WHERE concept_code_1 in (SELECT concept_code_1 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications)
-;
+;*/
 
 
 
@@ -963,7 +969,7 @@ AND vocabulary_id_1 = 'NDC'
 ;*/
 
 --Check
-SELECT *
+/*SELECT *
 FROM devv5.concept c
 LEFT JOIN dev_ndc.concept_relationship_manual crm
 ON c.concept_code = crm.concept_code_1
@@ -972,7 +978,7 @@ WHERE c.concept_code in ('63323025410', '87701040161', '10939032544', '597070001
                          '50428193592', '92896000008', '68016002399', '68016001171', '08080100006', '11822324050', '08080100004', '10939027601'
     )
     AND c.vocabulary_id = 'NDC'
-;
+;*/
 
 
 
@@ -1016,14 +1022,14 @@ ORDER BY 1,2,3,4,5,6,7,8
 --3.1. Insertion
 --done
 --INSERT INTO dev_ndc.concept_relationship_manual
-SELECT *
+/*SELECT *
 FROM dalex.ndc_concept_relationship_manual_2019_09_16_modifications
 WHERE (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id) NOT IN (  SELECT concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relationship_id
                                                                                                     FROM dev_ndc.concept_relationship_manual
                                                                                                     WHERE invalid_reason IS NULL)
-;
+;*/
 
---2020-07-07
+--2020-07-08
 
 --to deprecate changed mappings
 --SELECT (try-out for the following UPDATE)
@@ -1075,7 +1081,6 @@ END $_$;
 
 
 --mapping insertion
--- xxx inserted
 with tab as (
     SELECT DISTINCT s.*
     FROM dev_ndc.NDC_manual_mapped s
@@ -1142,23 +1147,24 @@ BEGIN
 END $_$;
 
 
+--Check that everything proceed correctly
+SELECT *
+FROM dev_ndc.concept c
+WHERE c.vocabulary_id = 'NDC'
+    AND NOT EXISTS (SELECT 1
+                    FROM dev_ndc.concept_relationship cr
+                    WHERE cr.concept_id_1 = c.concept_id
+                        AND cr.relationship_id = 'Maps to'
+                        AND cr.invalid_reason IS NULL)
 
-SELECT concept_code_1,
-       concept_code_2,
-       vocabulary_id_1,
-       vocabulary_id_2,
-       relationship_id,
-       valid_start_date,
-       valid_end_date,
-       invalid_reason
-FROM dev_ndc.concept_relationship_manual;
+    AND c.concept_id IN (SELECT source_concept_id FROM dev_ndc.NDC_manual_mapped WHERE source_concept_id IS NOT NULL AND target_concept_id BETWEEN 18 AND 2000000000) --exclude mapping to devices
+;
 
 
 
 
 
 --06. Unsorted
-
 select distinct c.concept_id, cr.relationship_id, cr.concept_id_2
 from symphony_ndc_not_in_vocab2 s
 join devv5.concept c
