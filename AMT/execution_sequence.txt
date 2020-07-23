@@ -1,0 +1,9 @@
+1. fast-recreate_schema
+2. load_stage_1
+3. rtc1-2.sql from intremediate work(mm checks and insertion. DROPs are commented out)
+4. load_stage_1
+5. load_stage_2
+6. input_tables_QA
+7. BuildRxE
+8. stage_tables_QA
+9. generic_update

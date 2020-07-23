@@ -1,6 +1,6 @@
 --vaccines, antibodies, microorganism preparations
---DROP TABLE dev_amt.vaccines;
-CREATE TABLE dev_amt.vaccines AS (
+--DROP TABLE vaccines;
+CREATE TABLE vaccines AS (
 with inclusion as (SELECT
         --general
         'vaccine|virus|Microb|Micr(o|)org|Bacter|Booster|antigen|serum|sera|antiserum|globin|globulin|strain|antibody|conjugate|split|live|attenuate|Adjuvant|cellular|inactivate|antitoxin|toxoid|Rho|whole( |-|)cell|polysaccharide'
@@ -110,11 +110,11 @@ exclusion as (SELECT
     'Serapine|Seralin|Olive|Diarrhoea|Antihistamine|Antitussive|Arginaid|Ointment|Persist|Benadryl|Benserazide|Blistex|Liver|Minoxidil|Ablavar|Inhibitor|Sanitiser|Anti(-| |)Bacterial' || '|' ||
     'Anti(-| |)microbial|Brivaracetam|Calamine|Gold|Caustic|Varenicline|Vardenafil|Codral|Coldguard|Oestrogen|Crosvar|pad|Cymevene|Cold|Cough|Antiseptic|Elmendos|Emend' || '|' ||
     'Fluorescein|Horseradish|Glivec|glucose|Haemorrhoid|Heparin(?! bind)|Hepasol|Hepsera|Imbruvica|Lavender|Levosimendan|Stick|Energy|Mendeleev|Border|Nexavar|Valsartan|Nuvaring|Oruvail' || '|' ||
-    'Seravit|Pevaryl|Alanine|Magnesium|Autohaler|Inhaler|Rivaroxaban|Simvar|Stivarga|Tamarindus|Tamiflu|Tenderwet|Tevaripiprazole|Truvada|Zyprexa'
-
+    'Seravit|Pevaryl|Alanine|Magnesium|Autohaler|Inhaler|Rivaroxaban|Simvar|Stivarga|Tamarindus|Tamiflu|Tenderwet|Tevaripiprazole|Truvada|Zyprexa|Meadowsweet|Gripe'
     )
 
 select * from (
+
     SELECT DISTINCT dcs.*
     FROM drug_concept_stage dcs
     WHERE dcs.concept_name ~* (select * from inclusion)
@@ -130,8 +130,9 @@ select * from (
     JOIN drug_concept_stage dcs2
         ON dcs2.concept_code = fr.destinationid::text
     WHERE dcs1.concept_name ~* (select * from inclusion)
-      AND dcs1.concept_name !~* (select * from exclusion)
-      AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
+        AND dcs1.concept_name !~* (select * from exclusion)
+        AND dcs1.concept_class_id NOT IN ('Unit', 'Supplier')
+        AND dcs2.concept_name !~* (select * from exclusion)
 ) a
 WHERE concept_class_id IN (
                            'Ingredient'
@@ -141,6 +142,8 @@ WHERE concept_class_id IN (
                           )
 );
 ;
+
+
 SELECT *
 FROM vaccines;
 
@@ -149,34 +152,42 @@ FROM vaccines;
 CREATE TABLE vaccines_2 AS (
 
 SELECT * FROM (
-SELECT DISTINCT dcs2.*
-FROM drug_concept_stage dcs
 
-JOIN internal_relationship_stage irs
-    ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
+    SELECT DISTINCT dcs2.*
+    FROM drug_concept_stage dcs
 
-JOIN drug_concept_stage dcs2
-    ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
+    JOIN internal_relationship_stage irs
+        ON dcs.concept_code = irs.concept_code_1 OR dcs.concept_code = irs.concept_code_2
 
-WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
-    AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
+    JOIN drug_concept_stage dcs2
+        ON dcs2.concept_code = irs.concept_code_1 OR dcs2.concept_code = irs.concept_code_2
 
-UNION
+    WHERE dcs.concept_code IN (SELECT concept_code FROM vaccines WHERE concept_code IS NOT NULL)
+        AND dcs2.concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
 
-SELECT DISTINCT *
-FROM vaccines
-WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
+    UNION
+
+    SELECT DISTINCT *
+    FROM vaccines
+    WHERE concept_class_id IN ('Drug Product', 'Ingredient', 'Device', 'Brand Name')
 ) as a
 
 )
 ;
 
-SELECT *
-FROM vaccines_2;
+--additinal concepts added
+SELECT DISTINCT *
+FROM vaccines_2
 
-SELECT * FROM dev_amt.relationship_to_concept_bckp300817;
+EXCEPT
 
---vaccine ingredients mapping
+SELECT DISTINCT *
+FROM vaccines
+;
+
+SELECT * FROM relationship_to_concept_bckp300817;
+
+--vaccine attributes mapping review
 SELECT DISTINCT
        dcs.concept_class_id,
        dcs.concept_name,
@@ -191,17 +202,22 @@ SELECT DISTINCT
        c.invalid_reason,
        c.domain_id,
        c.vocabulary_id
-FROM relationship_to_concept rtc
-join drug_concept_stage dcs
-    on dcs.concept_code = rtc.concept_code_1
-join concept c
-    on rtc.concept_id_2 = c.concept_id
-WHERE rtc.concept_code_1 in (select concept_code from vaccines_2 where concept_class_id IN ('Ingredient'/*, 'Brand Name'*/))
+FROM "mapping_review_backup_2020-03-31" m
+JOIN drug_concept_stage dcs
+    ON dcs.concept_code = m.concept_code_1
+JOIN concept c
+    ON m.concept_id_2 = c.concept_id
+WHERE m.concept_code_1 IN (
+                          SELECT concept_code
+                          FROM vaccines_2
+                          WHERE concept_class_id IN ('Ingredient'/*, 'Brand Name'*/)
+                          )
 ;
 
 
---vaccine mapping review
-SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*
+--vaccine final mapping review
+SELECT DISTINCT v.concept_name, v.concept_class_id, c2.*,
+                CASE WHEN d5c.concept_name IS NULL THEN 'new' END AS new_concept
 FROM vaccines_2 v
 LEFT JOIN concept c1
     ON v.concept_code = c1.concept_code AND c1.vocabulary_id = 'AMT'
@@ -209,4 +225,7 @@ LEFT JOIN concept_relationship cr
     ON c1.concept_id = cr.concept_id_1 AND cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NULL
 LEFT JOIN concept c2
     ON cr.concept_id_2 = c2.concept_id
+LEFT JOIN devv5.concept d5c
+    ON v.concept_code = d5c.concept_code
+        AND d5c.vocabulary_id = 'AMT'
 ;

@@ -106,38 +106,68 @@ JOIN drug_concept_stage dcs
     ON irs.concept_code_2 = dcs.concept_code
 WHERE irs.concept_code_1 = '776862004';
 
+--corresponding clinical drug forms for any drug or group of drugs(concept_code) via ancestor
+SELECT c.*, c2.*
+FROM concept c
+JOIN concept_relationship cr1
+    ON c.concept_id = cr1.concept_id_1
+        AND cr1.invalid_reason IS NULL
+        AND cr1.relationship_id = 'Maps to'
+JOIN concept_ancestor ca
+    ON cr1.concept_id_2 = ca.descendant_concept_id
+JOIN concept c2
+    ON ca.ancestor_concept_id = c2.concept_id
+        AND c2.concept_class_id = 'Clinical Drug Form'
+WHERE c.concept_code IN (
+                        SELECT concept_code
+                        FROM insulines_2
+                        WHERE concept_class_id = 'Drug Product'
+                        );
 
+-- Rx ingredients without drugs
+SELECT DISTINCT cc.*
+FROM concept cc
+WHERE cc.concept_id NOT IN (
+                           SELECT DISTINCT c.concept_id
+                           FROM concept c
+                           JOIN concept_relationship cr
+                               ON c.concept_id = cr.concept_id_1
+                           WHERE c.concept_id IN (
+                                                 SELECT concept_id_2
+                                                 FROM relationship_to_concept
+                                                 )
+                             AND c.concept_class_id = 'Ingredient'
+                             AND cr.relationship_id ILIKE '%RxNorm ing of%'
+                             AND c.standard_concept = 'S'
+                             AND cr.invalid_reason IS NULL
+                           )
+  AND cc.standard_concept = 'S'
+  AND cc.concept_class_id = 'Ingredient'
+;
 
--- generate mapping review
-SELECT DISTINCT 'Unit' AS source_concept_class_id, m.name, m.new_name, m.concept_id_2, m.precedence, m.mapping_type, m.conversion_factor, c.*
-FROM unit_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
+-- only AMT ingredients without clinical drugs
+SELECT DISTINCT dcs.*
+FROM drug_concept_stage dcs
+JOIN relationship_to_concept rtc
+    ON dcs.concept_code = rtc.concept_code_1
+WHERE rtc.concept_id_2 IN (
+                          SELECT DISTINCT cc.concept_id
+                          FROM concept cc
+                          WHERE cc.concept_id NOT IN (
+                                                     SELECT DISTINCT c.concept_id
+                                                     FROM concept c
+                                                     JOIN concept_relationship cr
+                                                         ON c.concept_id = cr.concept_id_1
+                                                     WHERE c.concept_id IN (
+                                                                           SELECT concept_id_2
+                                                                           FROM relationship_to_concept
+                                                                           )
+                                                       AND c.concept_class_id = 'Ingredient'
+                                                       AND cr.relationship_id ILIKE '%RxNorm ing of%'
+                                                       AND c.standard_concept = 'S'
+                                                       AND cr.invalid_reason IS NULL
+                                                     )
+                            AND cc.standard_concept = 'S'
+                            AND cc.concept_class_id = 'Ingredient'
+                          );
 
-UNION
-
-SELECT DISTINCT 'Ingredient' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM ingredient_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Brand Name' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM brand_name_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Supplier' AS source_concept_class_id, m.*, NULL::float AS conversion_factor,  c.*
-FROM supplier_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id
-
-UNION
-
-SELECT DISTINCT 'Dose Form' AS source_concept_class_id, m.*, NULL::float AS conversion_factor, c.*
-FROM dose_form_mapped m
-LEFT JOIN concept c
-    ON m.concept_id_2 = c.concept_id;
