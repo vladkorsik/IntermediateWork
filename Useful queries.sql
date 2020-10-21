@@ -5,6 +5,12 @@ FROM pg_stat_activity
 WHERE state = 'active';
 
 
+--Check OMOP vocabulary version
+SELECT *
+FROM vocabulary
+WHERE vocabulary_id = 'None';
+
+
 --DO syntax
 --https://github.com/Alexdavv/IntermediateWork/blob/master/DO%20syntax.sql
 
