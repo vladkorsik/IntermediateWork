@@ -9,6 +9,27 @@ WHERE state = 'active';
 --https://github.com/Alexdavv/IntermediateWork/blob/master/DO%20syntax.sql
 
 
+--check first vacant concept_id for manual change
+SELECT MAX (concept_id) + 1 FROM devv5.concept WHERE concept_id >= 31967 AND concept_id < 72245;
+
+
+--check first vacant concept_code among OMOP generated
+select 'OMOP'||max(replace(concept_code, 'OMOP','')::int4)+1 from devv5.concept where concept_code like 'OMOP%'  and concept_code not like '% %';
+
+
+--create sequence starting from first vacant concept_code among OMOP generated
+DO $$
+DECLARE
+	ex INTEGER;
+BEGIN
+	SELECT MAX(REPLACE(concept_code, 'OMOP','')::int4)+1 INTO ex FROM (
+		SELECT concept_code FROM concept WHERE concept_code LIKE 'OMOP%'  AND concept_code NOT LIKE '% %' -- Last valid value of the OMOP123-type codes
+			) AS s0;
+	DROP SEQUENCE IF EXISTS omop_seq;
+	EXECUTE 'CREATE SEQUENCE omop_seq INCREMENT BY 1 START WITH ' || ex || ' NO CYCLE CACHE 20';
+END$$;
+
+
 -- Drug Forms currently used in OMOP Drugs
 with ings AS (
 
@@ -63,6 +84,7 @@ GROUP BY
 
 ORDER BY 1
 ;
+
 
 -- Drug Forms currently NOT used in OMOP Drugs
 SELECT DISTINCT c.*
