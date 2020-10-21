@@ -1,3 +1,14 @@
+--check active queries in Postgres
+SELECT *
+FROM pg_stat_activity
+--WHERE pid = 123
+WHERE state = 'active';
+
+
+--DO syntax
+--https://github.com/Alexdavv/IntermediateWork/blob/master/DO%20syntax.sql
+
+
 -- Drug Forms currently used in OMOP Drugs
 with ings AS (
 
