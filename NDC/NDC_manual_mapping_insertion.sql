@@ -240,6 +240,10 @@ CREATE TABLE dalex.ndc_concept_relationship_manual_2019_12_05 AS
 CREATE TABLE dev_ndc.ndc_concept_relationship_manual_2020_06_26 AS
     (SELECT * FROM dev_ndc.concept_relationship_manual);
 
+--before mapping modifications 2020-07-23
+CREATE TABLE dev_ndc.ndc_concept_relationship_manual_2020_07_23 AS
+    (SELECT * FROM dev_ndc.concept_relationship_manual);
+
 
 
 --check the current version of CR_manual
@@ -653,7 +657,10 @@ JOIN devv5.concept c
 ;
 
 
-
+--TODO: add synonym/name combinations in file
+--TODO: check different mapping withing the same name
+--TODO: auto-map using the name match between NDC
+--TODO: upload using same name sorting feature
 
 
 
@@ -662,12 +669,11 @@ JOIN devv5.concept c
 
 --manual mapping insertion and processing
 --DROP TABLE dev_ndc.NDC_manual_mapped;
-
 CREATE TABLE dev_ndc.NDC_manual_mapped (
     sort int,
     source_concept_id int,
     source_code varchar(255),
-    source_code_description varchar(255),
+    source_code_description varchar(1000),
     comments varchar,
     --flag varchar,
     target_concept_id int,
@@ -685,6 +691,11 @@ WITH OIDS;
 --check if everything uploaded correctly and count of uploaded rows
 SELECT *
 FROM dev_ndc.NDC_manual_mapped;
+
+SELECT *
+FROM dev_ndc.NDC_manual_mapped
+WHERE source_concept_id IS NULL;
+
 
 DELETE
 FROM dev_ndc.NDC_manual_mapped
@@ -727,7 +738,7 @@ WHERE NOT EXISTS(SELECT 1
 
 
 --check if any source code/description are modified
-SELECT devv5.levenshtein(lower(m.source_code_description), lower(c.concept_name)) as name_diff, m.*, c.*
+SELECT devv5.similarity(lower(m.source_code_description), lower(c.concept_name)) as name_diff, m.*, c.*
 FROM dev_ndc.NDC_manual_mapped m
 LEFT JOIN devv5.concept c
     ON m.source_concept_id = c.concept_id
@@ -735,9 +746,19 @@ WHERE NOT EXISTS(SELECT 1
                  FROM devv5.concept s
                  WHERE s.concept_id = m.source_concept_id
                       AND s.concept_code = m.source_code
-                      AND s.concept_name = m.source_code_description
+                      AND lower(s.concept_name) = lower(m.source_code_description)
                       AND s.vocabulary_id = 'NDC'
-    );
+    )
+AND NOT EXISTS(SELECT 1
+                FROM devv5.concept s
+                JOIN devv5.concept_synonym cs
+                    ON s.concept_id = cs.concept_id
+                 WHERE s.concept_id = m.source_concept_id
+                      AND s.concept_code = m.source_code
+                      AND lower(cs.concept_synonym_name) = lower(m.source_code_description)
+                      AND s.vocabulary_id = 'NDC'
+    )
+;
 
 
 --check if target concepts exist in the concept table
@@ -1030,6 +1051,7 @@ WHERE (concept_code_1, concept_code_2, vocabulary_id_1, vocabulary_id_2, relatio
 ;*/
 
 --2020-07-08
+--2020-07-23
 
 --to deprecate changed mappings
 --SELECT (try-out for the following UPDATE)

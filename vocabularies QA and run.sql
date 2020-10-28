@@ -7,45 +7,44 @@ show search_path;
 
 
 
---Fast recreate;
+--Fast recreate
 --Use this script to recreate main tables (concept, concept_relationship, concept_synonym etc) without dropping your schema
 --devv5 - static variable;
 
 --recreate with default settings (copy from devv5, w/o ancestor, deprecated relationships and synonyms (faster)
-SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5');
+--SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5');
 
 --same as above, but table concept_ancestor is included
-SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_concept_ancestor=>true);
+--SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_concept_ancestor=>true);
 
 --full recreate, all tables are included (much slower)
 SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_concept_ancestor=>true, include_deprecated_rels=>true, include_synonyms=>true);
 
 --preserve old concept_ancestor, but it will be ignored if the include_concept_ancestor is set to true
-SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', drop_concept_ancestor=>false);
+--SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', drop_concept_ancestor=>false);
 
-SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_synonyms=>true);
-
-
+--SELECT devv5.FastRecreateSchema(main_schema_name=>'devv5', include_synonyms=>true);
 
 
 
---stage tables checks
---RUN all queries from Vocabulary-v5.0/working/QA_stage_tables.sql
---All queries should retrieve NULL
+--DRUG input tables checks
+--Errors
+--RUN https://github.com/OHDSI/Vocabulary-v5.0/blob/master/working/input_QA_integratable_E.sql --All queries should retrieve NULL
 
+--Warnings
+--RUN https://github.com/OHDSI/Vocabulary-v5.0/blob/master/working/input_QA_integratable_W.sql --All non-NULL results should be reviewed
 
-
---DRUG stage tables checks
+--Old checks
 --RUN all queries from Vocabulary-v5.0/working/drug_stage_tables_QA.sql --All queries should retrieve NULL
 --RUN all queries from Vocabulary-v5.0/working/Drug_stage_QA_optional.sql --All queries should retrieve NULL, but see comment inside
 
 
 
---for DRUG vocab (if creating RxE for them)
---Run Build_RxE script. Comment last “drops” block if you plan on using MapDrugVocab.
---If the source vocabulary does not fulfill quality criteria for RxE, run
--- script.
-
+--stage tables checks
+DO $_$
+BEGIN
+	PERFORM qa_tests.check_stage_tables ();
+END $_$;
 
 
 
@@ -56,12 +55,15 @@ BEGIN
 END $_$;
 
 
---basic tables checks
+
+--Basic tables checks
 --RUN all queries from Vocabulary-v5.0/working/CreateNewVocabulary_QA.sql --All queries should retrieve NULL
+
 
 
 --DRUG basic tables checks
 --RUN all queries from Vocabulary-v5.working/Basic_tables_QA.sql --All queries should retrieve NULL
+
 
 
 --QA checks
@@ -70,15 +72,20 @@ select * from QA_TESTS.GET_CHECKS();
 
 
 
+--Manual checks after generic
+--RUN and review the results: https://github.com/OHDSI/Vocabulary-v5.0/blob/master/working/manual_checks_after_generic.sql
+
+
+--Vocabulary-specific manual checks can be found in the manual_work directory in each vocabulary
+
 
 --manual ConceptAncestor (needed vocabularies are to be specified)
- DO $_$
+/* DO $_$
  BEGIN
     PERFORM VOCABULARY_PACK.pManualConceptAncestor(
     pVocabularies => 'SNOMED,LOINC'
  );
- END $_$
-;
+ END $_$;*/
 
 
 
@@ -110,16 +117,3 @@ select * from qa_tests.get_newly_concepts(pCompareWith=>'devv5'); --Newly added 
 select * from qa_tests.get_standard_concept_changes(pCompareWith=>'devv5'); --Standard concept changes
 select * from qa_tests.get_newly_concepts_standard_concept_status(pCompareWith=>'devv5'); --Newly added concepts and their standard concept status
 select * from qa_tests.get_changes_concept_mapping(pCompareWith=>'devv5'); --Changes of concept mapping status grouped by target domain
-
-
-
-
-
-
-
---check first vacant concept_id for manual change
-SELECT MAX (concept_id) + 1 FROM devv5.concept WHERE concept_id >= 31967 AND concept_id < 72245;
-
-
---check first vacant concept_code among OMOP generated
-select 'OMOP'||max(replace(concept_code, 'OMOP','')::int4)+1 from devv5.concept where concept_code like 'OMOP%'  and concept_code not like '% %';
