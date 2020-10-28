@@ -1,4 +1,3 @@
-
 --MeddraToSnomed statistics
 --Number of meddra codes in devv5 schema=105787
 SELECT count(distinct concept_code)
